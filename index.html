@@ -2,12 +2,32 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<title>JPG Metadata Viewer</title>
+		<title>Online JPG Metadata Viewer | EXIF Map & Privacy</title>
+		<meta
+			name="description"
+			content="View and map JPG EXIF metadata instantly in your browser. No uploads, full privacy. Drag and drop or select a photo to see its metadata and location."
+		/>
+		<meta
+			name="keywords"
+			content="EXIF, JPG, metadata, photo, privacy, map, GPS, online viewer, browser"
+		/>
 		<link
 			rel="icon"
 			type="image/jpeg"
 			href="https://robotsprocket.com/wp-content/uploads/2021/11/icon_med-250x250.jpg"
 		/>
+		<link rel="canonical" href="https://exif.robotsprocket.com/" />
+		<meta property="og:title" content="Online JPG EXIF Metadata Viewer" />
+		<meta
+			property="og:description"
+			content="View and map JPG EXIF metadata instantly in your browser. No uploads, full privacy."
+		/>
+		<meta
+			property="og:image"
+			content="https://robotsprocket.com/wp-content/uploads/2021/11/icon_med-250x250.jpg"
+		/>
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content="https://exif.robotsprocket.com/" />
 		<script>
 			fetch("ga-snippet.html")
 				.then((response) => (response.ok ? response.text() : ""))
@@ -95,7 +115,18 @@
 			<strong>Privacy Notice:</strong> All processing is done entirely in
 			your browser. Your photos are never uploaded to any server.
 		</div>
+		<h1
+			style="
+				width: 80%;
+				margin: 20px auto 0 auto;
+				text-align: center;
+				font-size: 2em;
+			"
+		>
+			Online JPG EXIF Metadata Viewer
+		</h1>
 		<div id="drop-area">Drop JPG file here</div>
+
 		<div style="width: 80%; margin: 10px auto; text-align: center">
 			<label for="file-picker" style="font-size: 1.1em"
 				>Or select a JPG file:</label
@@ -166,7 +197,7 @@
 				}
 				// Display image preview
 				const imgUrl = URL.createObjectURL(file);
-				imagePreviewDiv.innerHTML = `<img src="${imgUrl}" alt="Preview" style="max-width:100%;max-height:400px;border-radius:10px;border:1px solid #ccc;box-shadow:0 2px 8px #ccc;" />`;
+				imagePreviewDiv.innerHTML = `<img src="${imgUrl}" alt="Preview of dropped JPG file" style="max-width:100%;max-height:400px;border-radius:10px;border:1px solid #ccc;box-shadow:0 2px 8px #ccc;" />`;
 				const reader = new FileReader();
 				reader.onload = function (event) {
 					const arrayBuffer = event.target.result;
