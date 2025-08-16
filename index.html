@@ -4,6 +4,22 @@
 		<meta charset="UTF-8" />
 		<title>JPG Metadata Viewer</title>
 		<link
+			rel="icon"
+			type="image/jpeg"
+			href="https://robotsprocket.com/wp-content/uploads/2021/11/icon_med-250x250.jpg"
+		/>
+		<script>
+			fetch("ga-snippet.html")
+				.then((response) => (response.ok ? response.text() : ""))
+				.then((html) => {
+					if (html) {
+						const gaDiv = document.createElement("div");
+						gaDiv.innerHTML = html;
+						document.head.append(...gaDiv.childNodes);
+					}
+				});
+		</script>
+		<link
 			rel="stylesheet"
 			href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
 		/>
@@ -80,6 +96,17 @@
 			your browser. Your photos are never uploaded to any server.
 		</div>
 		<div id="drop-area">Drop JPG file here</div>
+		<div style="width: 80%; margin: 10px auto; text-align: center">
+			<label for="file-picker" style="font-size: 1.1em"
+				>Or select a JPG file:</label
+			>
+			<input
+				type="file"
+				id="file-picker"
+				accept="image/jpeg"
+				style="margin-left: 10px"
+			/>
+		</div>
 		<div
 			id="image-preview"
 			style="width: 80%; margin: 20px auto; text-align: center"
@@ -120,6 +147,7 @@
 			const metadataDiv = document.getElementById("metadata");
 			const mapDiv = document.getElementById("map");
 			const imagePreviewDiv = document.getElementById("image-preview");
+			const filePicker = document.getElementById("file-picker");
 
 			function dmsToDecimal(dms, ref) {
 				if (!Array.isArray(dms) || dms.length !== 3) return null;
@@ -129,20 +157,9 @@
 				return dec;
 			}
 
-			dropArea.addEventListener("dragover", (e) => {
-				e.preventDefault();
-				dropArea.style.background = "#e0e0e0";
-			});
-			dropArea.addEventListener("dragleave", (e) => {
-				e.preventDefault();
-				dropArea.style.background = "";
-			});
-			dropArea.addEventListener("drop", (e) => {
-				e.preventDefault();
-				dropArea.style.background = "";
-				const file = e.dataTransfer.files[0];
+			function handleFile(file) {
 				if (!file || file.type !== "image/jpeg") {
-					metadataDiv.textContent = "Please drop a JPG file.";
+					metadataDiv.textContent = "Please select a JPG file.";
 					mapDiv.style.display = "none";
 					imagePreviewDiv.innerHTML = "";
 					return;
@@ -252,6 +269,27 @@
 					mapDiv.style.display = "none";
 				};
 				reader.readAsArrayBuffer(file);
+			}
+
+			filePicker.addEventListener("change", (e) => {
+				if (e.target.files && e.target.files[0]) {
+					handleFile(e.target.files[0]);
+				}
+			});
+			dropArea.addEventListener("dragover", (e) => {
+				e.preventDefault();
+				dropArea.style.background = "#e0e0e0";
+			});
+			dropArea.addEventListener("dragleave", (e) => {
+				e.preventDefault();
+				dropArea.style.background = "";
+			});
+			dropArea.addEventListener("drop", (e) => {
+				e.preventDefault();
+				dropArea.style.background = "";
+				if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+					handleFile(e.dataTransfer.files[0]);
+				}
 			});
 		</script>
 	</body>
