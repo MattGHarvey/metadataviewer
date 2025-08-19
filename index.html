@@ -100,6 +100,7 @@
 		</style>
 	</head>
 	<body>
+		<!-- Privacy blurb at the top of the page -->
 		<div
 			style="
 				width: 80%;
@@ -115,6 +116,7 @@
 			<strong>Privacy Notice:</strong> All processing is done entirely in
 			your browser. Your photos are never uploaded to any server.
 		</div>
+		<!-- Main heading -->
 		<h1
 			style="
 				width: 80%;
@@ -125,8 +127,10 @@
 		>
 			Online JPG EXIF Metadata Viewer
 		</h1>
+		<!-- Drag-and-drop area for JPG files -->
 		<div id="drop-area">Drop JPG file here</div>
 
+		<!-- File picker for JPG files -->
 		<div style="width: 80%; margin: 10px auto; text-align: center">
 			<label for="file-picker" style="font-size: 1.1em"
 				>Or select a JPG file:</label
@@ -138,12 +142,16 @@
 				style="margin-left: 10px"
 			/>
 		</div>
+		<!-- Image preview area -->
 		<div
 			id="image-preview"
 			style="width: 80%; margin: 20px auto; text-align: center"
 		></div>
+		<!-- Metadata table area -->
 		<div id="metadata"></div>
+		<!-- Map area for GPS coordinates -->
 		<div id="map"></div>
+		<!-- Footer with copyright and links -->
 		<footer
 			style="
 				width: 80%;
@@ -182,12 +190,14 @@
 		<script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 		<script>
+			// Get references to DOM elements
 			const dropArea = document.getElementById("drop-area");
 			const metadataDiv = document.getElementById("metadata");
 			const mapDiv = document.getElementById("map");
 			const imagePreviewDiv = document.getElementById("image-preview");
 			const filePicker = document.getElementById("file-picker");
 
+			// Convert GPS coordinates from DMS to decimal
 			function dmsToDecimal(dms, ref) {
 				if (!Array.isArray(dms) || dms.length !== 3) return null;
 				const [deg, min, sec] = dms;
@@ -196,7 +206,9 @@
 				return dec;
 			}
 
+			// Handle file selection or drop
 			function handleFile(file) {
+				// Validate file type
 				if (!file || file.type !== "image/jpeg") {
 					metadataDiv.textContent = "Please select a JPG file.";
 					mapDiv.style.display = "none";
@@ -215,6 +227,7 @@
 					} catch (err) {
 						exifData = { error: "Error reading EXIF: " + err };
 					}
+					// Display EXIF metadata as a table
 					if (
 						typeof exifData === "object" &&
 						exifData !== null &&
@@ -223,6 +236,7 @@
 						let table =
 							'<table style="width:100%;border-collapse:collapse;">';
 						for (const key in exifData) {
+							// Skip thumbnail field
 							if (
 								Object.prototype.hasOwnProperty.call(
 									exifData,
@@ -231,9 +245,9 @@
 								key !== "thumbnail"
 							) {
 								let value = exifData[key];
+								// Attempt to decode string values for special characters
 								if (typeof value === "string") {
 									try {
-										// Attempt to decode as UTF-8 if it contains replacement characters
 										if (value.includes("\uFFFD")) {
 											const decoder = new TextDecoder(
 												"utf-8"
@@ -255,7 +269,7 @@
 						metadataDiv.innerHTML =
 							"<strong>EXIF Metadata:</strong>" + table;
 
-						// Show map if GPS data exists
+						// If GPS data exists, show map
 						if (
 							exifData.GPSLatitude &&
 							exifData.GPSLongitude &&
@@ -273,6 +287,7 @@
 							if (lat !== null && lng !== null) {
 								mapDiv.style.display = "block";
 								mapDiv.innerHTML = "";
+								// Initialize Leaflet map
 								const map = L.map("map").setView(
 									[lat, lng],
 									13
@@ -296,6 +311,7 @@
 							mapDiv.style.display = "none";
 						}
 					} else {
+						// Fallback: show EXIF as pretty-printed JSON
 						metadataDiv.innerHTML =
 							"<strong>EXIF Metadata:</strong><pre>" +
 							JSON.stringify(exifData, null, 2) +
@@ -310,19 +326,24 @@
 				reader.readAsArrayBuffer(file);
 			}
 
+			// File picker event
 			filePicker.addEventListener("change", (e) => {
 				if (e.target.files && e.target.files[0]) {
 					handleFile(e.target.files[0]);
 				}
 			});
+			// Drag-and-drop events
+			// Highlight drop area on dragover
 			dropArea.addEventListener("dragover", (e) => {
 				e.preventDefault();
 				dropArea.style.background = "#e0e0e0";
 			});
+			// Remove highlight on dragleave
 			dropArea.addEventListener("dragleave", (e) => {
 				e.preventDefault();
 				dropArea.style.background = "";
 			});
+			// Handle file drop
 			dropArea.addEventListener("drop", (e) => {
 				e.preventDefault();
 				dropArea.style.background = "";
