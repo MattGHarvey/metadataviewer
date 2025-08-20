@@ -648,6 +648,9 @@
 			const imagePreviewDiv = document.getElementById("image-preview");
 			const filePicker = document.getElementById("file-picker");
 
+			// Global variable to track the current map instance
+			let currentMap = null;
+
 			// Convert GPS coordinates from DMS to decimal
 			function dmsToDecimal(dms, ref) {
 				if (!Array.isArray(dms) || dms.length !== 3) return null;
@@ -662,6 +665,11 @@
 				// Validate file type
 				if (!file || file.type !== "image/jpeg") {
 					metadataDiv.textContent = "Please select a JPG file.";
+					// Clean up map when file validation fails
+					if (currentMap) {
+						currentMap.remove();
+						currentMap = null;
+					}
 					mapDiv.style.display = "none";
 					imagePreviewDiv.innerHTML = "";
 					return;
@@ -678,11 +686,14 @@
 					} catch (err) {
 						exifData = { error: "Error reading EXIF: " + err };
 					}
-					// Display EXIF metadata as a table
+
+					// Check if EXIF data exists and has properties
 					if (
+						exifData &&
 						typeof exifData === "object" &&
 						exifData !== null &&
-						!exifData.error
+						!exifData.error &&
+						Object.keys(exifData).length > 0
 					) {
 						let table =
 							'<table style="width:100%;border-collapse:collapse;">';
@@ -699,7 +710,13 @@
 								// Attempt to decode string values for special characters
 								if (typeof value === "string") {
 									try {
-										if (value.includes("\uFFFD")) {
+										// Handle common encoding issues
+										if (
+											value.includes("\uFFFD") ||
+											value.includes("â") ||
+											value.includes("Ã")
+										) {
+											// Try UTF-8 decoding
 											const decoder = new TextDecoder(
 												"utf-8"
 											);
@@ -710,8 +727,32 @@
 													)
 												)
 											);
+										} else {
+											// Handle common character replacements for improperly encoded text
+											value = value
+												.replace(/â€™/g, "'") // Right single quotation mark
+												.replace(/â€œ/g, '"') // Left double quotation mark
+												.replace(/â€/g, '"') // Right double quotation mark
+												.replace(/â€"/g, "—") // Em dash
+												.replace(/â€"/g, "–") // En dash
+												.replace(/Ã¡/g, "á") // á
+												.replace(/Ã©/g, "é") // é
+												.replace(/Ã­/g, "í") // í
+												.replace(/Ã³/g, "ó") // ó
+												.replace(/Ãº/g, "ú") // ú
+												.replace(/Ã±/g, "ñ") // ñ
+												.replace(/Ã¼/g, "ü") // ü
+												.replace(/Ã¤/g, "ä") // ä
+												.replace(/Ã¶/g, "ö") // ö
+												.replace(/Ã /g, "à") // à
+												.replace(/Ã¨/g, "è") // è
+												.replace(/Ã¬/g, "ì") // ì
+												.replace(/Ã²/g, "ò") // ò
+												.replace(/Ã¹/g, "ù"); // ù
 										}
-									} catch {}
+									} catch {
+										// If all else fails, keep original value
+									}
 								}
 								table += `<tr><td style='border:1px solid #ccc;padding:4px;'><strong>${key}</strong></td><td style='border:1px solid #ccc;padding:4px;'>${value}</td></tr>`;
 							}
@@ -737,9 +778,18 @@
 							);
 							if (lat !== null && lng !== null) {
 								mapDiv.style.display = "block";
+
+								// Destroy existing map if it exists
+								if (currentMap) {
+									currentMap.remove();
+									currentMap = null;
+								}
+
+								// Clear the map container
 								mapDiv.innerHTML = "";
-								// Initialize Leaflet map
-								const map = L.map("map").setView(
+
+								// Initialize new Leaflet map
+								currentMap = L.map("map").setView(
 									[lat, lng],
 									13
 								);
@@ -750,28 +800,54 @@
 										attribution:
 											"© OpenStreetMap contributors",
 									}
-								).addTo(map);
+								).addTo(currentMap);
 								L.marker([lat, lng])
-									.addTo(map)
+									.addTo(currentMap)
 									.bindPopup("Photo Location")
 									.openPopup();
 							} else {
+								// Clean up map when no valid GPS coordinates
+								if (currentMap) {
+									currentMap.remove();
+									currentMap = null;
+								}
 								mapDiv.style.display = "none";
 							}
 						} else {
+							// Clean up map when no GPS data
+							if (currentMap) {
+								currentMap.remove();
+								currentMap = null;
+							}
 							mapDiv.style.display = "none";
 						}
 					} else {
-						// Fallback: show EXIF as pretty-printed JSON
-						metadataDiv.innerHTML =
-							"<strong>EXIF Metadata:</strong><pre>" +
-							JSON.stringify(exifData, null, 2) +
-							"</pre>";
+						// Handle cases where no EXIF data is found
+						if (exifData.error) {
+							metadataDiv.innerHTML = `<strong>Error:</strong> ${exifData.error}`;
+						} else if (
+							!exifData ||
+							Object.keys(exifData).length === 0
+						) {
+							metadataDiv.innerHTML =
+								"<strong>No EXIF metadata found</strong><br>This image may not contain EXIF data, or the EXIF data may have been removed during processing/editing.";
+						} else {
+							// Fallback: show EXIF as pretty-printed JSON
+							metadataDiv.innerHTML =
+								"<strong>EXIF Metadata:</strong><pre>" +
+								JSON.stringify(exifData, null, 2) +
+								"</pre>";
+						}
 						mapDiv.style.display = "none";
 					}
 				};
 				reader.onerror = function () {
 					metadataDiv.textContent = "Error reading file.";
+					// Clean up map on read error
+					if (currentMap) {
+						currentMap.remove();
+						currentMap = null;
+					}
 					mapDiv.style.display = "none";
 				};
 				reader.readAsArrayBuffer(file);
