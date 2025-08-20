@@ -1092,6 +1092,135 @@
 									.addTo(currentMap)
 									.bindPopup("Photo Location")
 									.openPopup();
+
+								// Add map service buttons
+								const buttonContainer =
+									document.createElement("div");
+								buttonContainer.style.cssText = `
+									text-align: center;
+									margin: 15px 0;
+									display: flex;
+									gap: 10px;
+									justify-content: center;
+									flex-wrap: wrap;
+								`;
+
+								// Google Maps button
+								const googleMapsBtn =
+									document.createElement("button");
+								googleMapsBtn.textContent =
+									"🌍 Open in Google Maps";
+								googleMapsBtn.style.cssText = `
+									background: #4285f4;
+									color: white;
+									border: none;
+									padding: 10px 15px;
+									border-radius: 6px;
+									cursor: pointer;
+									font-size: 14px;
+									font-weight: 500;
+									transition: background 0.2s ease;
+								`;
+								googleMapsBtn.addEventListener(
+									"mouseover",
+									() => {
+										googleMapsBtn.style.background =
+											"#3367d6";
+									}
+								);
+								googleMapsBtn.addEventListener(
+									"mouseout",
+									() => {
+										googleMapsBtn.style.background =
+											"#4285f4";
+									}
+								);
+								googleMapsBtn.addEventListener("click", () => {
+									window.open(
+										`https://www.google.com/maps?q=${lat},${lng}`,
+										"_blank"
+									);
+								});
+
+								// OpenStreetMap button
+								const osmBtn = document.createElement("button");
+								osmBtn.textContent = "🗺️ Open in OpenStreetMap";
+								osmBtn.style.cssText = `
+									background: #7ebc6f;
+									color: white;
+									border: none;
+									padding: 10px 15px;
+									border-radius: 6px;
+									cursor: pointer;
+									font-size: 14px;
+									font-weight: 500;
+									transition: background 0.2s ease;
+								`;
+								osmBtn.addEventListener("mouseover", () => {
+									osmBtn.style.background = "#6da85f";
+								});
+								osmBtn.addEventListener("mouseout", () => {
+									osmBtn.style.background = "#7ebc6f";
+								});
+								osmBtn.addEventListener("click", () => {
+									window.open(
+										`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=15`,
+										"_blank"
+									);
+								});
+
+								// Apple Maps button (only show on Apple devices)
+								const isAppleDevice =
+									/Mac|iPhone|iPad|iPod/.test(
+										navigator.userAgent
+									);
+								if (isAppleDevice) {
+									const appleMapsBtn =
+										document.createElement("button");
+									appleMapsBtn.textContent =
+										"🍎 Open in Apple Maps";
+									appleMapsBtn.style.cssText = `
+										background: #007aff;
+										color: white;
+										border: none;
+										padding: 10px 15px;
+										border-radius: 6px;
+										cursor: pointer;
+										font-size: 14px;
+										font-weight: 500;
+										transition: background 0.2s ease;
+									`;
+									appleMapsBtn.addEventListener(
+										"mouseover",
+										() => {
+											appleMapsBtn.style.background =
+												"#0051d5";
+										}
+									);
+									appleMapsBtn.addEventListener(
+										"mouseout",
+										() => {
+											appleMapsBtn.style.background =
+												"#007aff";
+										}
+									);
+									appleMapsBtn.addEventListener(
+										"click",
+										() => {
+											window.location.href = `maps://?q=${lat},${lng}`;
+										}
+									);
+									buttonContainer.appendChild(appleMapsBtn);
+								}
+
+								buttonContainer.appendChild(googleMapsBtn);
+								buttonContainer.appendChild(osmBtn);
+
+								// Insert the button container after the map
+								mapDiv.parentNode.insertBefore(
+									buttonContainer,
+									mapDiv.nextSibling
+								);
 							} else {
 								// Clean up map when no valid GPS coordinates
 								if (currentMap) {
