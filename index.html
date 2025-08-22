@@ -754,7 +754,7 @@
 							? "0 EV"
 							: `${value > 0 ? "+" : ""}${value} EV`;
 				} else if (key === "ResolutionUnit") {
-					shouldShowBoth = true;
+					shouldShowBoth = false; // Pretty value is sufficient
 					const units = {
 						1: "No unit",
 						2: "Inches",
@@ -762,7 +762,7 @@
 					};
 					prettyValue = units[value] || value;
 				} else if (key === "ExposureProgram") {
-					shouldShowBoth = true;
+					shouldShowBoth = false; // Pretty value is clear enough
 					const programs = {
 						0: "Not defined",
 						1: "Manual",
@@ -776,7 +776,7 @@
 					};
 					prettyValue = programs[value] || value;
 				} else if (key === "MeteringMode") {
-					shouldShowBoth = true;
+					shouldShowBoth = false; // Pretty value is clear enough
 					const modes = {
 						0: "Unknown",
 						1: "Average",
@@ -789,7 +789,7 @@
 					};
 					prettyValue = modes[value] || value;
 				} else if (key === "LightSource") {
-					shouldShowBoth = true;
+					shouldShowBoth = false; // Pretty value is clear enough
 					const sources = {
 						0: "Unknown",
 						1: "Daylight",
@@ -835,11 +835,11 @@
 					};
 					prettyValue = flashModes[value] || `Flash code: ${value}`;
 				} else if (key === "ColorSpace") {
-					shouldShowBoth = true;
+					shouldShowBoth = false; // Pretty value is clear enough
 					const spaces = { 1: "sRGB", 65535: "Uncalibrated" };
 					prettyValue = spaces[value] || value;
 				} else if (key === "ExposureMode") {
-					shouldShowBoth = true;
+					shouldShowBoth = false; // Pretty value is clear enough
 					const modes = {
 						0: "Auto exposure",
 						1: "Manual exposure",
@@ -847,7 +847,7 @@
 					};
 					prettyValue = modes[value] || value;
 				} else if (key === "WhiteBalance") {
-					shouldShowBoth = true;
+					shouldShowBoth = false; // Pretty value is clear enough
 					const balance = {
 						0: "Auto white balance",
 						1: "Manual white balance",
@@ -1347,6 +1347,36 @@
 			dropArea.addEventListener("drop", (e) => {
 				e.preventDefault();
 				dropArea.style.background = "";
+				if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+					handleFile(e.dataTransfer.files[0]);
+				}
+			});
+
+			// Document-wide drag-and-drop events for dropping files anywhere on the page
+			document.addEventListener("dragover", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				// Add a subtle visual indicator that the page can accept drops
+				document.body.style.backgroundColor = "#f8f9fa";
+			});
+
+			document.addEventListener("dragleave", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				// Only remove the indicator if we're leaving the document entirely
+				if (e.target === document.documentElement) {
+					document.body.style.backgroundColor = "";
+				}
+			});
+
+			document.addEventListener("drop", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				// Remove the visual indicator
+				document.body.style.backgroundColor = "";
+				// Also remove drop area highlight in case it was active
+				dropArea.style.background = "";
+
 				if (e.dataTransfer.files && e.dataTransfer.files[0]) {
 					handleFile(e.dataTransfer.files[0]);
 				}
