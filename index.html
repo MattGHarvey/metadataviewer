@@ -341,7 +341,7 @@
 				background-color: #f2f2f2;
 			}
 			#map {
-				width: 80%;
+				width: 50%;
 				height: 500px;
 				margin: 20px auto;
 				border-radius: 10px;
@@ -652,6 +652,9 @@
 			// Global variable to track the current map instance
 			let currentMap = null;
 
+			// Global variable to track the current map button container
+			let currentButtonContainer = null;
+
 			// Pretty print EXIF values with user-friendly names and formatting
 			function getPrettyExifInfo(key, value, originalValue = null) {
 				const prettyNames = {
@@ -890,10 +893,19 @@
 					};
 					prettyValue = methods[value] || value;
 				} else if (key === "GPSLatitude" || key === "GPSLongitude") {
-					shouldShowBoth = true;
+					shouldShowBoth = false; // Don't show raw data for cleaner display
 					if (Array.isArray(value) && value.length === 3) {
 						const [deg, min, sec] = value;
-						prettyValue = `${deg}° ${min}' ${sec.toFixed(4)}"`;
+						// Check if this is decimal minutes format (common in EXIF)
+						if (sec === 0 || sec < 0.0001) {
+							// Format as degrees and decimal minutes
+							prettyValue = `${deg}° ${min.toFixed(6)}'`;
+						} else {
+							// Format as degrees, minutes, seconds
+							prettyValue = `${deg}° ${Math.floor(
+								min
+							)}' ${sec.toFixed(4)}"`;
+						}
 					}
 				} else if (key === "GPSAltitude" && typeof value === "number") {
 					shouldShowBoth = true;
@@ -924,7 +936,17 @@
 			function dmsToDecimal(dms, ref) {
 				if (!Array.isArray(dms) || dms.length !== 3) return null;
 				const [deg, min, sec] = dms;
-				let dec = deg + min / 60 + sec / 3600;
+
+				// Handle both decimal minutes and degrees/minutes/seconds formats
+				let dec;
+				if (sec === 0 || sec < 0.0001) {
+					// Decimal minutes format: degrees + decimal_minutes/60
+					dec = deg + min / 60;
+				} else {
+					// Traditional DMS format: degrees + minutes/60 + seconds/3600
+					dec = deg + min / 60 + sec / 3600;
+				}
+
 				if (ref === "S" || ref === "W") dec = -dec;
 				return dec;
 			}
@@ -1093,9 +1115,21 @@
 									.bindPopup("Photo Location")
 									.openPopup();
 
+								// Clean up existing button container if it exists
+								if (
+									currentButtonContainer &&
+									currentButtonContainer.parentNode
+								) {
+									currentButtonContainer.parentNode.removeChild(
+										currentButtonContainer
+									);
+									currentButtonContainer = null;
+								}
+
 								// Add map service buttons
 								const buttonContainer =
 									document.createElement("div");
+								currentButtonContainer = buttonContainer; // Track the new container
 								buttonContainer.style.cssText = `
 									text-align: center;
 									margin: 15px 0;
@@ -1227,6 +1261,16 @@
 									currentMap.remove();
 									currentMap = null;
 								}
+								// Clean up button container when no valid GPS coordinates
+								if (
+									currentButtonContainer &&
+									currentButtonContainer.parentNode
+								) {
+									currentButtonContainer.parentNode.removeChild(
+										currentButtonContainer
+									);
+									currentButtonContainer = null;
+								}
 								mapDiv.style.display = "none";
 							}
 						} else {
@@ -1234,6 +1278,16 @@
 							if (currentMap) {
 								currentMap.remove();
 								currentMap = null;
+							}
+							// Clean up button container when no GPS data
+							if (
+								currentButtonContainer &&
+								currentButtonContainer.parentNode
+							) {
+								currentButtonContainer.parentNode.removeChild(
+									currentButtonContainer
+								);
+								currentButtonContainer = null;
 							}
 							mapDiv.style.display = "none";
 						}
