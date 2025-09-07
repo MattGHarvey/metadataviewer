@@ -16,7 +16,7 @@ The EXIF Overlay Creator allows you to create Instagram-ready images with stylis
 - **Popular Fields First**: Camera make/model, exposure settings, ISO, focal length automatically highlighted
 - **Complete Data Access**: Access to all available EXIF metadata fields
 - **Easy Selection**: Checkbox interface with pretty-formatted field names and values
-- **Intelligent Filtering**: Automatically excludes empty or irrelevant fields
+- **Intelligent Filtering**: Automatically excludes empty or irrelevant fields 
 
 ### 🖼️ **Professional Output**
 - **High-Resolution Export**: Maintains original image quality and resolution
