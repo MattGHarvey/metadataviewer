@@ -64,11 +64,29 @@
 					navigator.serviceWorker
 						.register("./sw.js")
 						.then((registration) => {
-							// Service worker registered successfully
+							console.log("Service Worker registered successfully:", registration.scope);
+							
+							// Check for updates
+							registration.addEventListener('updatefound', () => {
+								const newWorker = registration.installing;
+								newWorker.addEventListener('statechange', () => {
+									if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+										// New version available
+										console.log('New version available! Refresh to update.');
+									}
+								});
+							});
 						})
 						.catch((error) => {
 							console.log("SW registration failed:", error);
 						});
+				});
+				
+				// Listen for service worker messages
+				navigator.serviceWorker.addEventListener('message', (event) => {
+					if (event.data && event.data.type === 'CACHE_UPDATED') {
+						console.log('App updated and ready for offline use!');
+					}
 				});
 			}
 
@@ -939,7 +957,7 @@
 			
 			function initializeExifOverlayInterface() {
 				exifOverlayContent.innerHTML = `
-					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; height: 70vh;">
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; height: 80vh;">
 						<!-- Left Panel - Controls -->
 						<div style="overflow-y: auto; padding-right: 12px;">
 							<h3 style="margin: 0 0 16px 0; color: #333;">Styling Options</h3>
@@ -1067,18 +1085,6 @@
 									cursor: pointer;
 									transition: all 0.2s;
 								">Reset All</button>
-								<button id="debug-slider" style="
-									flex: 0.5;
-									background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-									color: white;
-									border: none;
-									padding: 12px 16px;
-									border-radius: 6px;
-									font-weight: 600;
-									cursor: pointer;
-									transition: all 0.2s;
-									font-size: 12px;
-								">Debug</button>
 								<button id="preview-exif-overlay" style="
 									flex: 1;
 									background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
@@ -1131,19 +1137,16 @@
 				// Set initial font family value and trigger update
 				const fontFamilySelect = document.getElementById('font-family');
 				fontFamilySelect.value = 'Roboto, sans-serif';
-				console.log('🔄 Initial font family set to:', fontFamilySelect.value);
 				
 				// Wait for fonts to load before initial preview
 				if (document.fonts && document.fonts.ready) {
 					document.fonts.ready.then(() => {
-						console.log('🎨 Fonts loaded, creating initial preview');
 						setTimeout(() => {
 							updateExifOverlayPreview();
 						}, 100);
 					});
 				} else {
 					// Fallback for browsers without Font Loading API
-					console.log('🎨 Font Loading API not available, using fallback delay');
 					setTimeout(() => {
 						updateExifOverlayPreview();
 					}, 500); // Longer delay to allow fonts to load
@@ -1154,12 +1157,8 @@
 			
 			function setupExifOverlayEventListeners() {
 				// Prevent duplicate event listener setup
-				if (exifEventListenersSetup) {
-					console.log('📋 Event listeners already setup, skipping');
-					return;
-				}
+				if (exifEventListenersSetup) return;
 				exifEventListenersSetup = true;
-				console.log('🚀 Setting up EXIF overlay event listeners');
 				
 				// Range inputs with live value display
 				const borderWidth = document.getElementById('border-width');
@@ -1167,22 +1166,15 @@
 				const fontSize = document.getElementById('font-size');
 				const fontSizeValue = document.getElementById('font-size-value');
 				
-				console.log('🔍 Font size slider element found:', fontSize ? 'YES' : 'NO');
-				console.log('🔍 Font size value element found:', fontSizeValue ? 'YES' : 'NO');
-				
 				borderWidth.addEventListener('input', () => {
-					console.log('📏 Border width changed to:', borderWidth.value);
 					borderWidthValue.textContent = borderWidth.value + 'px';
 					updateExifOverlayPreview();
 				});
 				
 				fontSize.addEventListener('input', () => {
-					console.log('🔤 Font size changed to:', fontSize.value);
 					fontSizeValue.textContent = fontSize.value + 'px';
 					updateExifOverlayPreview();
 				});
-				
-				console.log('✅ Font size event listener attached successfully');
 				
 				// Color and selection inputs
 				['border-color', 'text-color', 'separator-char'].forEach(id => {
@@ -1192,11 +1184,9 @@
 				// Font family needs special handling for immediate updates
 				const fontFamilySelect = document.getElementById('font-family');
 				fontFamilySelect.addEventListener('change', () => {
-					console.log('🎨 Font family changed to:', fontFamilySelect.value);
 					updateExifOverlayPreview();
 				});
 				fontFamilySelect.addEventListener('input', () => {
-					console.log('🎨 Font family input event:', fontFamilySelect.value);
 					updateExifOverlayPreview();
 				});
 				
@@ -1291,59 +1281,12 @@
 				
 				// Action buttons
 				document.getElementById('reset-exif-overlay').addEventListener('click', resetExifOverlaySettings);
-				document.getElementById('debug-slider').addEventListener('click', debugSlider);
 				document.getElementById('preview-exif-overlay').addEventListener('click', updateExifOverlayPreview);
 				document.getElementById('download-exif-overlay').addEventListener('click', downloadExifOverlay);
 			}
 			
-			function debugSlider() {
-				console.log('🐛 DEBUG: Starting slider diagnostics');
-				
-				const fontSizeSlider = document.getElementById('font-size');
-				const fontSizeValue = document.getElementById('font-size-value');
-				
-				console.log('🐛 DEBUG: Font size slider element:', fontSizeSlider);
-				console.log('🐛 DEBUG: Font size value element:', fontSizeValue);
-				console.log('🐛 DEBUG: Current slider value:', fontSizeSlider ? fontSizeSlider.value : 'N/A');
-				console.log('🐛 DEBUG: Current value display:', fontSizeValue ? fontSizeValue.textContent : 'N/A');
-				console.log('🐛 DEBUG: Event listeners setup flag:', exifEventListenersSetup);
-				
-				// Try to manually change the slider and see if it triggers
-				if (fontSizeSlider) {
-					console.log('🐛 DEBUG: Manually setting slider to 20');
-					fontSizeSlider.value = '20';
-					console.log('🐛 DEBUG: Triggering input event');
-					fontSizeSlider.dispatchEvent(new Event('input'));
-					console.log('🐛 DEBUG: Value after manual change:', fontSizeSlider.value);
-					console.log('🐛 DEBUG: Display after manual change:', fontSizeValue ? fontSizeValue.textContent : 'N/A');
-				}
-				
-				// Check if event listeners exist
-				console.log('🐛 DEBUG: Checking event listeners on slider...');
-				try {
-					const listeners = getEventListeners ? getEventListeners(fontSizeSlider) : 'getEventListeners not available in this browser';
-					console.log('🐛 DEBUG: Event listeners:', listeners);
-				} catch (e) {
-					console.log('🐛 DEBUG: getEventListeners not available (normal in production)');
-				}
-				
-				// Test different event types
-				console.log('🐛 DEBUG: Testing different event types...');
-				if (fontSizeSlider) {
-					fontSizeSlider.addEventListener('change', () => console.log('🐛 CHANGE event fired!'), { once: true });
-					fontSizeSlider.addEventListener('input', () => console.log('🐛 INPUT event fired!'), { once: true });
-					fontSizeSlider.addEventListener('mousedown', () => console.log('🐛 MOUSEDOWN event fired!'), { once: true });
-					fontSizeSlider.addEventListener('mouseup', () => console.log('🐛 MOUSEUP event fired!'), { once: true });
-					
-					console.log('🐛 DEBUG: Please try manually dragging the slider now and watch the console...');
-				}
-			}
-			
 			function resetExifOverlaySettings() {
-				console.log('🔄 RESET: Starting reset process');
-				
 				// Reset the event listener flag so we can re-setup if needed
-				console.log('🔄 RESET: Resetting event listener flag');
 				exifEventListenersSetup = false;
 				
 				// Reset border settings
@@ -1355,14 +1298,8 @@
 				const fontSizeSlider = document.getElementById('font-size');
 				const fontSizeValue = document.getElementById('font-size-value');
 				
-				console.log('🔄 RESET: Font size slider element:', fontSizeSlider ? 'FOUND' : 'NOT FOUND');
-				console.log('🔄 RESET: Font size value element:', fontSizeValue ? 'FOUND' : 'NOT FOUND');
-				console.log('🔄 RESET: Current slider value before reset:', fontSizeSlider ? fontSizeSlider.value : 'N/A');
-				
 				fontSizeSlider.value = '16';
 				fontSizeValue.textContent = '16px';
-				
-				console.log('🔄 RESET: Slider value after reset:', fontSizeSlider.value);
 				
 				document.getElementById('text-color').value = '#000000';
 				document.getElementById('font-family').value = 'Roboto, sans-serif';
@@ -1387,20 +1324,15 @@
 				});
 				
 				// Trigger input event manually to ensure slider works
-				console.log('🔄 RESET: Triggering manual input event');
 				fontSizeSlider.dispatchEvent(new Event('input'));
 				
 				// Re-setup event listeners after reset
-				console.log('🔄 RESET: Re-setting up event listeners');
 				setupExifOverlayEventListeners();
 				
 				// Update preview after a small delay
 				setTimeout(() => {
-					console.log('🔄 RESET: Updating preview');
 					updateExifOverlayPreview();
 				}, 50);
-				
-				console.log('🔄 RESET: Reset process completed');
 			}
 			
 			function updateAspectRatioButtons(activeId) {
@@ -1494,16 +1426,10 @@
 			}
 			
 			function updateExifOverlayPreview() {
-				console.log('🖼️ PREVIEW: Starting preview update');
-				
 				const canvas = document.getElementById('exif-preview-canvas');
 				const noImageMessage = document.getElementById('no-image-message');
 				
-				console.log('🖼️ PREVIEW: Canvas element found:', canvas ? 'YES' : 'NO');
-				console.log('🖼️ PREVIEW: No image message found:', noImageMessage ? 'YES' : 'NO');
-				
 				if (!canvas) {
-					console.log('🖼️ PREVIEW: No canvas found, returning early');
 					return;
 				}
 				
@@ -1512,7 +1438,6 @@
 				canvas.style.display = 'block';
 				
 				const ctx = canvas.getContext('2d');
-				console.log('🖼️ PREVIEW: Canvas context:', ctx ? 'OK' : 'FAILED');
 				
 				// Get current settings
 				const borderWidth = parseInt(document.getElementById('border-width').value);
@@ -1522,45 +1447,19 @@
 				const fontFamilyElement = document.getElementById('font-family');
 				const fontFamily = fontFamilyElement ? fontFamilyElement.value || 'Roboto, sans-serif' : 'Roboto, sans-serif';
 				
-				console.log('🖼️ PREVIEW: Settings:', {
-					borderWidth,
-					borderColor,
-					fontSize,
-					textColor,
-					fontFamily,
-					fontFamilyElement: fontFamilyElement ? 'FOUND' : 'NOT FOUND',
-					actualFontValue: fontFamilyElement ? fontFamilyElement.value : 'N/A'
-				});
-				
-				console.log('🖼️ PREVIEW: Current image file:', currentImageFile ? 'EXISTS' : 'NONE');
-				
 				if (!currentImageFile) {
-					console.log('🖼️ PREVIEW: Creating sample preview');
 					// Show sample preview with placeholder image
 					const sampleWidth = 400;
 					const sampleHeight = 300;
 					const totalWidth = sampleWidth + (borderWidth * 2);
 					const totalHeight = sampleHeight + (borderWidth * 2) + fontSize + 20; // Extra space for text
 					
-					console.log('🖼️ PREVIEW: Sample dimensions:', {
-						sampleWidth,
-						sampleHeight,
-						totalWidth,
-						totalHeight,
-						borderWidth,
-						fontSize
-					});
-					
 					canvas.width = totalWidth;
 					canvas.height = totalHeight;
-					
-					console.log('🖼️ PREVIEW: Canvas size set to:', canvas.width, 'x', canvas.height);
 					
 					// Draw border
 					ctx.fillStyle = borderColor;
 					ctx.fillRect(0, 0, totalWidth, totalHeight);
-					
-					console.log('🖼️ PREVIEW: Border drawn with color:', borderColor);
 					
 					// Draw sample image (gray placeholder)
 					ctx.fillStyle = '#f0f0f0';
@@ -1573,13 +1472,9 @@
 					ctx.textBaseline = 'middle';
 					ctx.fillText('Sample Image Preview', totalWidth / 2, borderWidth + sampleHeight / 2);
 					
-					console.log('🖼️ PREVIEW: Sample image drawn');
-					
 					// Get selected EXIF data and draw it
 					const selectedExifData = getSelectedExifData();
-					console.log('🖼️ PREVIEW: Selected EXIF data:', selectedExifData);
 					drawExifText(ctx, selectedExifData, totalWidth, totalHeight, borderWidth, fontSize, textColor, fontFamily);
-					console.log('🖼️ PREVIEW: EXIF text drawn, preview complete');
 					return;
 				}
 				
@@ -1756,23 +1651,10 @@
 			}
 			
 			function drawExifText(ctx, textLines, canvasWidth, canvasHeight, borderWidth, fontSize, textColor, fontFamily) {
-				console.log('📝 DRAW TEXT: Starting text draw with params:', {
-					textLines,
-					canvasWidth,
-					canvasHeight,
-					borderWidth,
-					fontSize,
-					textColor,
-					fontFamily: fontFamily || 'Roboto, sans-serif' // Show fallback in logs
-				});
+				if (textLines.length === 0) return;
 				
 				// Ensure we have a valid font family
 				const safeFontFamily = fontFamily || 'Roboto, sans-serif';
-				
-				if (textLines.length === 0) {
-					console.log('📝 DRAW TEXT: No text lines to draw, returning');
-					return;
-				}
 				
 				ctx.fillStyle = textColor;
 				ctx.font = `${fontSize}px ${safeFontFamily}`;
@@ -1783,32 +1665,21 @@
 				const imageWidth = canvasWidth - (borderWidth * 2);
 				const imageHeight = canvasHeight - (borderWidth * 2);
 				
-				console.log('📝 DRAW TEXT: Text to draw:', text);
-				console.log('📝 DRAW TEXT: Calculated dimensions:', { imageWidth, imageHeight });
-				
 				// Position text at bottom center, scaled to image width
 				const textX = canvasWidth / 2;
 				const textY = borderWidth + imageHeight + (borderWidth / 2);
-				
-				console.log('📝 DRAW TEXT: Text position:', { textX, textY });
 				
 				// Scale font to fit within image width with some padding
 				const maxTextWidth = imageWidth * 0.95;
 				let currentFontSize = fontSize;
 				ctx.font = `${currentFontSize}px ${safeFontFamily}`;
 				
-				console.log('📝 DRAW TEXT: Starting font scaling, maxTextWidth:', maxTextWidth);
-				
 				while (ctx.measureText(text).width > maxTextWidth && currentFontSize > 8) {
 					currentFontSize--;
 					ctx.font = `${currentFontSize}px ${safeFontFamily}`;
 				}
 				
-				console.log('📝 DRAW TEXT: Final font size:', currentFontSize);
-				console.log('📝 DRAW TEXT: Text width:', ctx.measureText(text).width);
-				
 				ctx.fillText(text, textX, textY);
-				console.log('📝 DRAW TEXT: Text drawn at position', textX, textY, 'with text:', text);
 			}
 			
 			function downloadExifOverlay() {
