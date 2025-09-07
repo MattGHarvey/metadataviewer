@@ -273,6 +273,33 @@
 			</button>
 		</div>
 		
+		<!-- Image compression button area -->
+		<div
+			id="compression-button-area"
+			style="width: 80%; margin: 10px auto; text-align: center; display: none;"
+		>
+			<button
+				id="compress-image-btn"
+				style="
+					background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+					color: white;
+					border: none;
+					padding: 12px 24px;
+					border-radius: 8px;
+					font-size: 16px;
+					font-weight: 600;
+					cursor: pointer;
+					box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+					transition: all 0.3s ease;
+					margin: 10px;
+				"
+				onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(76, 175, 80, 0.4)'"
+				onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.3)'"
+			>
+				🗜️ Compress Image
+			</button>
+		</div>
+		
 		<!-- Panorama splitter modal -->
 		<div id="pano-splitter-modal" style="display: none;">
 			<div class="modal-overlay" style="
@@ -378,6 +405,63 @@
 					<p style="margin: 0 0 24px 0; color: #666;">Create Instagram-ready images with stylish EXIF data overlays</p>
 					
 					<div id="exif-overlay-content">
+						<!-- Content will be populated by JavaScript -->
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Image compression modal -->
+		<div id="compression-modal" style="display: none;">
+			<div class="modal-overlay" style="
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.7);
+				z-index: 1000;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 20px;
+			">
+				<div class="modal-content" style="
+					background: white;
+					border-radius: 16px;
+					padding: 0;
+					max-width: 95%;
+					max-height: 95%;
+					overflow-y: auto;
+					position: relative;
+					box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+					width: 800px;
+				">
+					<button id="close-compression-modal" style="
+						position: absolute;
+						top: 12px;
+						right: 12px;
+						background: none;
+						border: none;
+						font-size: 24px;
+						cursor: pointer;
+						color: #666;
+						width: 32px;
+						height: 32px;
+						border-radius: 50%;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						transition: background 0.2s;
+					"
+					onmouseover="this.style.background='#f0f0f0'"
+					onmouseout="this.style.background='none'"
+					>&times;</button>
+					
+					<h2 style="margin: 0 0 16px 0; color: #333;">Image Compression</h2>
+					<p style="margin: 0 0 24px 0; color: #666;">Reduce image file size while maintaining quality</p>
+					
+					<div id="compression-content">
 						<!-- Content will be populated by JavaScript -->
 					</div>
 				</div>
@@ -634,6 +718,7 @@
 		</footer>
 		<script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/compressorjs@1.2.1/dist/compressor.min.js"></script>
 		<script src="./js/jszip.min.js"></script>
 		<script src="./js/FileSaver.min.js"></script>
 		<script src="./js/app.js"></script>
