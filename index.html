@@ -3,14 +3,14 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Online JPG Metadata Viewer & Instagram Panorama Splitter</title>
+		<title>JPG Metadata Viewer, Panorama Splitter & EXIF Overlay Creator</title>
 		<meta
 			name="description"
-			content="View JPG EXIF metadata and split panoramic photos for Instagram. No uploads, full privacy. Drag and drop to see metadata, location, and create Instagram-ready carousel posts."
+			content="View JPG EXIF metadata, split panoramic photos for Instagram, and create stylish EXIF overlay images. No uploads, full privacy. Professional photo tools in your browser."
 		/>
 		<meta
 			name="keywords"
-			content="EXIF, JPG, metadata, photo, privacy, map, GPS, online viewer, browser, panorama, Instagram, carousel, split, social media"
+			content="EXIF, JPG, metadata, photo, privacy, map, GPS, panorama, Instagram, carousel, split, social media, overlay, border, typography, photography"
 		/>
 
 		<!-- PWA Icons -->
@@ -39,6 +39,11 @@
 		/>
 		<meta property="og:type" content="website" />
 		<meta property="og:url" content="https://exif.robotsprocket.com/" />
+		
+		<!-- Google Fonts -->
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;500;600;700&family=Lato:wght@400;700&family=Montserrat:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 		<script>
 			fetch("ga-snippet.html")
 				.then((response) => (response.ok ? response.text() : ""))
@@ -424,7 +429,7 @@
 				color: #333;
 			"
 		>
-			<strong>Privacy Notice:</strong> All metadata viewing and panorama processing is done entirely in
+			<strong>Privacy Notice:</strong> All metadata viewing, panorama processing, and overlay creation is done entirely in
 			your browser. Your photos are never uploaded to any server.
 		</div>
 		<!-- Main heading -->
@@ -436,7 +441,7 @@
 				font-size: 2em;
 			"
 		>
-			Online JPG EXIF Metadata Viewer & Panorama Splitter
+			JPG Metadata Viewer, Panorama Splitter & EXIF Overlay Creator
 		</h1>
 		<!-- Drag-and-drop area for JPG files -->
 		<div id="drop-area">Drop JPG file here</div>
@@ -483,6 +488,33 @@
 				onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.3)'"
 			>
 				📱 Split for Instagram
+			</button>
+		</div>
+		
+		<!-- EXIF overlay button area -->
+		<div
+			id="exif-overlay-button-area"
+			style="width: 80%; margin: 10px auto; text-align: center; display: none;"
+		>
+			<button
+				id="create-exif-overlay-btn"
+				style="
+					background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+					color: white;
+					border: none;
+					padding: 12px 24px;
+					border-radius: 8px;
+					font-size: 16px;
+					font-weight: 600;
+					cursor: pointer;
+					box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+					transition: all 0.3s ease;
+					margin: 10px;
+				"
+				onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255, 107, 107, 0.4)'"
+				onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(255, 107, 107, 0.3)'"
+			>
+				📋 Create EXIF Overlay
 			</button>
 		</div>
 		
@@ -535,6 +567,62 @@
 					<p style="margin: 0 0 24px 0; color: #666;">Split your panoramic photo into Instagram-friendly carousel posts</p>
 					
 					<div id="splitter-content">
+						<!-- Content will be populated by JavaScript -->
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<!-- EXIF Overlay modal -->
+		<div id="exif-overlay-modal" style="display: none;">
+			<div class="modal-overlay" style="
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.7);
+				z-index: 1000;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			">
+				<div class="modal-content" style="
+					background: white;
+					border-radius: 12px;
+					padding: 24px;
+					max-width: 95%;
+					max-height: 95%;
+					overflow-y: auto;
+					position: relative;
+					box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+					width: 900px;
+				">
+					<button id="close-exif-modal" style="
+						position: absolute;
+						top: 12px;
+						right: 12px;
+						background: none;
+						border: none;
+						font-size: 24px;
+						cursor: pointer;
+						color: #666;
+						width: 32px;
+						height: 32px;
+						border-radius: 50%;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						transition: background 0.2s;
+					"
+					onmouseover="this.style.background='#f0f0f0'"
+					onmouseout="this.style.background='none'"
+					>&times;</button>
+					
+					<h2 style="margin: 0 0 16px 0; color: #333;">EXIF Data Overlay Creator</h2>
+					<p style="margin: 0 0 24px 0; color: #666;">Create Instagram-ready images with stylish EXIF data overlays</p>
+					
+					<div id="exif-overlay-content">
 						<!-- Content will be populated by JavaScript -->
 					</div>
 				</div>
@@ -798,6 +886,11 @@
 			const panoSplitterModal = document.getElementById("pano-splitter-modal");
 			const closeModalBtn = document.getElementById("close-modal");
 			const splitterContent = document.getElementById("splitter-content");
+			const exifOverlayButtonArea = document.getElementById("exif-overlay-button-area");
+			const createExifOverlayBtn = document.getElementById("create-exif-overlay-btn");
+			const exifOverlayModal = document.getElementById("exif-overlay-modal");
+			const closeExifModalBtn = document.getElementById("close-exif-modal");
+			const exifOverlayContent = document.getElementById("exif-overlay-content");
 
 			// Global variable to track the current map instance
 			let currentMap = null;
@@ -811,11 +904,592 @@
 			let slicedImages = [];
 			let fullViewImage = null;
 			
+			// Global variables for EXIF overlay
+			let currentExifData = null;
+			let overlayPreviewCanvas = null;
+			
 			// Panorama splitter configuration
 			const aspectRatio = 4/5; // Instagram 4:5 aspect ratio
 			const standardWidth = 1080;
 			const standardHeight = Math.round(standardWidth / aspectRatio); // 1350
 			const minSlices = 2;
+
+			// EXIF overlay functions
+			function showExifOverlayButton() {
+				exifOverlayButtonArea.style.display = 'block';
+			}
+			
+			function hideExifOverlayButton() {
+				exifOverlayButtonArea.style.display = 'none';
+			}
+			
+			function openExifOverlayModal() {
+				exifOverlayModal.style.display = 'block';
+				document.body.style.overflow = 'hidden';
+				
+				// Initialize the EXIF overlay interface
+				initializeExifOverlayInterface();
+			}
+			
+			function closeExifOverlayModal() {
+				exifOverlayModal.style.display = 'none';
+				document.body.style.overflow = 'auto';
+			}
+			
+			function initializeExifOverlayInterface() {
+				exifOverlayContent.innerHTML = `
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; height: 70vh;">
+						<!-- Left Panel - Controls -->
+						<div style="overflow-y: auto; padding-right: 12px;">
+							<h3 style="margin: 0 0 16px 0; color: #333;">Styling Options</h3>
+							
+							<!-- Font Selection -->
+							<div style="margin-bottom: 20px;">
+								<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Font Family</label>
+								<select id="font-family" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+									<option value="Inter">Inter (Modern Sans)</option>
+									<option value="Roboto">Roboto (Clean Sans)</option>
+									<option value="Open Sans">Open Sans (Friendly Sans)</option>
+									<option value="Lato">Lato (Humanist Sans)</option>
+									<option value="Montserrat">Montserrat (Geometric Sans)</option>
+									<option value="Nunito">Nunito (Rounded Sans)</option>
+									<option value="Poppins">Poppins (Stylish Sans)</option>
+									<option value="Playfair Display">Playfair Display (Elegant Serif)</option>
+								</select>
+							</div>
+							
+							<!-- Border Settings -->
+							<div style="margin-bottom: 20px;">
+								<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Border Width</label>
+								<input type="range" id="border-width" min="20" max="120" value="40" style="width: 100%; margin-bottom: 8px;">
+								<span id="border-width-value" style="font-size: 14px; color: #666;">40px</span>
+							</div>
+							
+							<div style="margin-bottom: 20px;">
+								<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Border Color</label>
+								<div style="display: grid; grid-template-columns: 1fr repeat(3, auto); gap: 8px; align-items: center;">
+									<input type="color" id="border-color" value="#ffffff" style="width: 100%; height: 40px; border: 1px solid #ddd; border-radius: 4px;">
+									<button id="preset-white" style="padding: 8px 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">White</button>
+									<button id="preset-black" style="padding: 8px 12px; background: #000; color: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">Black</button>
+									<button id="preset-cream" style="padding: 8px 12px; background: #f5f5dc; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">Cream</button>
+								</div>
+							</div>
+							
+							<!-- Text Settings -->
+							<div style="margin-bottom: 20px;">
+								<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Font Size</label>
+								<input type="range" id="font-size" min="10" max="28" value="16" style="width: 100%; margin-bottom: 8px;">
+								<span id="font-size-value" style="font-size: 14px; color: #666;">16px</span>
+							</div>
+							
+							<div style="margin-bottom: 20px;">
+								<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Text Color</label>
+								<div style="display: grid; grid-template-columns: 1fr repeat(3, auto); gap: 8px; align-items: center;">
+									<input type="color" id="text-color" value="#000000" style="width: 100%; height: 40px; border: 1px solid #ddd; border-radius: 4px;">
+									<button id="text-black" style="padding: 8px 12px; background: #000; color: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">Black</button>
+									<button id="text-white" style="padding: 8px 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">White</button>
+									<button id="text-gray" style="padding: 8px 12px; background: #666; color: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">Gray</button>
+								</div>
+							</div>
+							
+							<!-- Separator Character -->
+							<div style="margin-bottom: 20px;">
+								<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Separator</label>
+								<select id="separator-char" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+									<option value=" • ">Bullet (•)</option>
+									<option value=" | ">Pipe (|)</option>
+									<option value=" / ">Forward Slash (/)</option>
+									<option value=" — ">Em Dash (—)</option>
+									<option value=" · ">Middle Dot (·)</option>
+									<option value="   ">Spaces Only</option>
+								</select>
+							</div>
+							
+							<!-- EXIF Data Selection -->
+							<div style="margin-bottom: 20px;">
+								<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Camera Data to Display</label>
+								<div id="exif-checkboxes" style="border: 1px solid #ddd; border-radius: 4px; padding: 12px; background: #f9f9f9;">
+									<!-- Essential photography fields only -->
+								</div>
+							</div>
+							
+							<!-- Action Buttons -->
+							<div style="display: flex; gap: 12px; margin-top: 20px;">
+								<button id="preview-exif-overlay" style="
+									flex: 1;
+									background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+									color: white;
+									border: none;
+									padding: 12px 16px;
+									border-radius: 6px;
+									font-weight: 600;
+									cursor: pointer;
+									transition: all 0.2s;
+								">Refresh Preview</button>
+								<button id="download-exif-overlay" style="
+									flex: 1;
+									background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+									color: white;
+									border: none;
+									padding: 12px 16px;
+									border-radius: 6px;
+									font-weight: 600;
+									cursor: pointer;
+									transition: all 0.2s;
+								">Download Image</button>
+							</div>
+						</div>
+						
+						<!-- Right Panel - Preview -->
+						<div style="display: flex; flex-direction: column;">
+							<h3 style="margin: 0 0 16px 0; color: #333;">Preview</h3>
+							<div style="flex: 1; border: 2px dashed #ddd; border-radius: 8px; padding: 16px; display: flex; align-items: center; justify-content: center; background: #f9f9f9;">
+								<div id="preview-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #666;">
+									<canvas id="exif-preview-canvas" style="max-width: 100%; max-height: 100%; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: none;"></canvas>
+									<div id="no-image-message" style="font-size: 16px; line-height: 1.5;">
+										<div style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;">📷</div>
+										<div style="margin-bottom: 8px; font-weight: 600;">No Image Selected</div>
+										<div style="font-size: 14px; opacity: 0.7; margin-bottom: 12px;">Upload an image in the Metadata Viewer tab first</div>
+										<div style="font-size: 12px; opacity: 0.5;">Then click "Refresh Preview" to update this view</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				`;
+				
+				// Setup event listeners for the EXIF overlay interface
+				setupExifOverlayEventListeners();
+				
+				// Populate EXIF checkboxes
+				populateEssentialExifCheckboxes();
+				
+				// Create initial preview after a small delay to ensure DOM is ready
+				setTimeout(() => {
+					updateExifOverlayPreview();
+				}, 100);
+			}
+			
+			function setupExifOverlayEventListeners() {
+				// Range inputs with live value display
+				const borderWidth = document.getElementById('border-width');
+				const borderWidthValue = document.getElementById('border-width-value');
+				const fontSize = document.getElementById('font-size');
+				const fontSizeValue = document.getElementById('font-size-value');
+				
+				borderWidth.addEventListener('input', () => {
+					borderWidthValue.textContent = borderWidth.value + 'px';
+					updateExifOverlayPreview();
+				});
+				
+				fontSize.addEventListener('input', () => {
+					fontSizeValue.textContent = fontSize.value + 'px';
+					updateExifOverlayPreview();
+				});
+				
+				// Color and selection inputs
+				['font-family', 'border-color', 'text-color', 'separator-char'].forEach(id => {
+					document.getElementById(id).addEventListener('change', updateExifOverlayPreview);
+				});
+				
+				// Color preset buttons
+				document.getElementById('preset-white').addEventListener('click', () => {
+					document.getElementById('border-color').value = '#ffffff';
+					updateExifOverlayPreview();
+				});
+				
+				document.getElementById('preset-black').addEventListener('click', () => {
+					document.getElementById('border-color').value = '#000000';
+					updateExifOverlayPreview();
+				});
+				
+				document.getElementById('preset-cream').addEventListener('click', () => {
+					document.getElementById('border-color').value = '#f5f5dc';
+					updateExifOverlayPreview();
+				});
+				
+				document.getElementById('text-black').addEventListener('click', () => {
+					document.getElementById('text-color').value = '#000000';
+					updateExifOverlayPreview();
+				});
+				
+				document.getElementById('text-white').addEventListener('click', () => {
+					document.getElementById('text-color').value = '#ffffff';
+					updateExifOverlayPreview();
+				});
+				
+				document.getElementById('text-gray').addEventListener('click', () => {
+					document.getElementById('text-color').value = '#666666';
+					updateExifOverlayPreview();
+				});
+				
+				// Action buttons
+				document.getElementById('preview-exif-overlay').addEventListener('click', updateExifOverlayPreview);
+				document.getElementById('download-exif-overlay').addEventListener('click', downloadExifOverlay);
+			}
+			
+			function populateEssentialExifCheckboxes() {
+				const container = document.getElementById('exif-checkboxes');
+				if (!container) return;
+				
+				// Essential photography data fields only
+				const essentialFields = [
+					{ key: 'FNumber', label: 'Aperture (f/)', displayLabel: 'f/' },
+					{ key: 'ExposureTime', label: 'Shutter Speed', displayLabel: '' },
+					{ key: 'ISOSpeedRatings', label: 'ISO', displayLabel: 'ISO ' },
+					{ key: 'FocalLength', label: 'Focal Length', displayLabel: '' },
+					{ key: 'Make', label: 'Camera Brand', displayLabel: '' },
+					{ key: 'Model', label: 'Camera Model', displayLabel: '' },
+					{ key: 'LensModel', label: 'Lens', displayLabel: '' }
+				];
+				
+				// Camera/gear fields that should be unchecked by default
+				const cameraFields = ['Make', 'Model', 'LensModel'];
+				
+				container.innerHTML = '';
+				
+				essentialFields.forEach(field => {
+					const wrapper = document.createElement('div');
+					wrapper.style.marginBottom = '8px';
+					
+					const checkbox = document.createElement('input');
+					checkbox.type = 'checkbox';
+					checkbox.id = `exif-${field.key}`;
+					checkbox.value = field.key;
+					// Check photography data by default, uncheck camera/gear data
+					checkbox.checked = !cameraFields.includes(field.key);
+					checkbox.style.marginRight = '8px';
+					checkbox.addEventListener('change', updateExifOverlayPreview);
+					
+					const label = document.createElement('label');
+					label.htmlFor = checkbox.id;
+					label.textContent = field.label;
+					label.style.fontSize = '14px';
+					label.style.color = '#333';
+					label.style.cursor = 'pointer';
+					
+					wrapper.appendChild(checkbox);
+					wrapper.appendChild(label);
+					container.appendChild(wrapper);
+				});
+			}
+			
+			function addExifCheckbox(container, key, value, checked = false) {
+				const div = document.createElement('div');
+				div.style.cssText = 'margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px;';
+				
+				const checkbox = document.createElement('input');
+				checkbox.type = 'checkbox';
+				checkbox.id = `exif-${key}`;
+				checkbox.checked = checked;
+				checkbox.style.cssText = 'margin-top: 2px; min-width: 16px;';
+				checkbox.addEventListener('change', updateExifOverlayPreview);
+				
+				const label = document.createElement('label');
+				label.htmlFor = `exif-${key}`;
+				label.style.cssText = 'cursor: pointer; font-size: 14px; line-height: 1.3;';
+				
+				// Get pretty name and value
+				const exifInfo = getPrettyExifInfo(key, value);
+				label.innerHTML = `<strong>${exifInfo.prettyName}:</strong> ${exifInfo.prettyValue}`;
+				
+				div.appendChild(checkbox);
+				div.appendChild(label);
+				container.appendChild(div);
+			}
+			
+			function updateExifOverlayPreview() {
+				const canvas = document.getElementById('exif-preview-canvas');
+				const noImageMessage = document.getElementById('no-image-message');
+				
+				if (!canvas) {
+					return;
+				}
+				
+				// Always show canvas and hide no-image message for sample preview
+				if (noImageMessage) noImageMessage.style.display = 'none';
+				canvas.style.display = 'block';
+				
+				const ctx = canvas.getContext('2d');
+				
+				// Get current settings
+				const borderWidth = parseInt(document.getElementById('border-width').value);
+				const borderColor = document.getElementById('border-color').value;
+				const fontSize = parseInt(document.getElementById('font-size').value);
+				const textColor = document.getElementById('text-color').value;
+				const fontFamily = document.getElementById('font-family').value;
+				
+				if (!currentImageFile) {
+					// Show sample preview with placeholder image
+					const sampleWidth = 400;
+					const sampleHeight = 300;
+					const totalWidth = sampleWidth + (borderWidth * 2);
+					const totalHeight = sampleHeight + (borderWidth * 2) + fontSize + 20; // Extra space for text
+					
+					canvas.width = totalWidth;
+					canvas.height = totalHeight;
+					
+					// Draw border
+					ctx.fillStyle = borderColor;
+					ctx.fillRect(0, 0, totalWidth, totalHeight);
+					
+					// Draw sample image (gray placeholder)
+					ctx.fillStyle = '#f0f0f0';
+					ctx.fillRect(borderWidth, borderWidth, sampleWidth, sampleHeight);
+					
+					// Draw placeholder text
+					ctx.fillStyle = '#999';
+					ctx.font = '16px Arial';
+					ctx.textAlign = 'center';
+					ctx.textBaseline = 'middle';
+					ctx.fillText('Sample Image Preview', totalWidth / 2, borderWidth + sampleHeight / 2);
+					
+					// Get selected EXIF data and draw it
+					const selectedExifData = getSelectedExifData();
+					drawExifText(ctx, selectedExifData, totalWidth, totalHeight, borderWidth, fontSize, textColor, fontFamily);
+					return;
+				}
+				
+				// Load the image using FileReader (same approach as panorama splitter)
+				const reader = new FileReader();
+				reader.onload = (e) => {
+					const img = new Image();
+					img.onload = () => {
+						// Calculate canvas size
+						const maxPreviewSize = 400;
+						const imageAspectRatio = img.width / img.height;
+						
+						let previewWidth, previewHeight;
+						if (imageAspectRatio > 1) {
+							previewWidth = maxPreviewSize;
+							previewHeight = maxPreviewSize / imageAspectRatio;
+						} else {
+							previewHeight = maxPreviewSize;
+							previewWidth = maxPreviewSize * imageAspectRatio;
+						}
+						
+						// Add border to preview dimensions
+						const totalWidth = previewWidth + (borderWidth * 2);
+						const totalHeight = previewHeight + (borderWidth * 2);
+						
+						canvas.width = totalWidth;
+						canvas.height = totalHeight;
+						
+						// Draw border (background)
+						ctx.fillStyle = borderColor;
+						ctx.fillRect(0, 0, totalWidth, totalHeight);
+						
+						// Draw image
+						ctx.drawImage(img, borderWidth, borderWidth, previewWidth, previewHeight);
+						
+						// Get selected EXIF data
+						const selectedExifData = getSelectedExifData();
+						
+						// Draw EXIF text
+						drawExifText(ctx, selectedExifData, totalWidth, totalHeight, borderWidth, fontSize, textColor, fontFamily);
+					};
+					
+					img.onerror = () => {
+						console.error('Failed to load image for preview');
+					};
+					
+					img.src = e.target.result;
+				};
+				
+				reader.onerror = () => {
+					console.error('Failed to read image file');
+				};
+				
+				reader.readAsDataURL(currentImageFile);
+			}
+			
+			function getSelectedExifData() {
+				const separator = document.getElementById('separator-char').value;
+				const selectedItems = [];
+				const checkboxes = document.querySelectorAll('#exif-checkboxes input[type="checkbox"]:checked');
+				
+				checkboxes.forEach(checkbox => {
+					const key = checkbox.id.replace('exif-', '');
+					
+					// Get display value for this field
+					let value = getDisplayValue(key);
+					
+					if (value) {
+						selectedItems.push(value);
+					}
+				});
+				
+				// Return as single line joined by separator
+				return selectedItems.length > 0 ? [selectedItems.join(separator)] : [];
+			}
+			
+			function getDisplayValue(key) {
+				// Sample data with technical labels only
+				const sampleData = {
+					'FNumber': 'ƒ/2.8',
+					'ExposureTime': '1/125s',
+					'ISOSpeedRatings': 'ISO 400',
+					'FocalLength': '85mm',
+					'Make': 'Canon',
+					'Model': 'EOS R5', 
+					'LensModel': 'RF 85mm f/2 Macro IS STM'
+				};
+				
+				// Use actual EXIF data if available, otherwise sample data
+				if (currentExifData && currentExifData[key]) {
+					const exifInfo = getPrettyExifInfo(key, currentExifData[key]);
+					let value = exifInfo.prettyValue;
+					
+					// Ensure value is a string before using replace
+					if (typeof value !== 'string') {
+						value = String(value);
+					}
+					
+					// Apply proper technical formatting
+					if (key === 'FNumber') {
+						// Always use ƒ character for aperture
+						value = value.replace(/^f\//, 'ƒ/');
+						if (!value.startsWith('ƒ/')) {
+							value = `ƒ/${value}`;
+						}
+					} else if (key === 'ExposureTime') {
+						// Format shutter speed as proper fraction with 's' suffix
+						// Remove any existing 's' suffix first
+						value = value.replace(/s$/, '');
+						
+						// Handle decimal values (convert to fraction)
+						if (value.includes('.') && !value.includes('/')) {
+							const decimalValue = parseFloat(value);
+							if (decimalValue >= 1) {
+								// For values >= 1 second, show as decimal + "
+								value = `${decimalValue}"`;
+							} else {
+								// For values < 1 second, convert to fraction + s
+								const denominator = Math.round(1 / decimalValue);
+								value = `1/${denominator}s`;
+							}
+						} else if (!value.includes('/') && parseFloat(value) >= 1) {
+							// For whole numbers >= 1, add quote mark for seconds
+							value = `${value}"`;
+						} else if (value.includes('/')) {
+							// If it's already a fraction, add 's' suffix
+							value = `${value}s`;
+						}
+						// If it's already a fraction (like 1/125), keep it as is
+					} else if (key === 'FocalLength') {
+						// Ensure focal length has 'mm' suffix
+						if (!value.endsWith('mm')) {
+							value = `${value}mm`;
+						}
+					} else if (key === 'ISOSpeedRatings') {
+						// Clean up duplicate ISO information
+						// Remove any parenthetical duplicates like "ISO 160 (160)"
+						value = value.replace(/\s*\(\d+\)$/, '');
+						
+						// Ensure ISO has 'ISO' prefix
+						if (!value.startsWith('ISO')) {
+							value = `ISO ${value}`;
+						}
+					}
+					
+					return value;
+				}
+				
+				return sampleData[key] || '';
+			}
+			
+			function drawExifText(ctx, textLines, canvasWidth, canvasHeight, borderWidth, fontSize, textColor, fontFamily) {
+				if (textLines.length === 0) return;
+				
+				ctx.fillStyle = textColor;
+				ctx.font = `${fontSize}px ${fontFamily}`;
+				ctx.textAlign = 'center';
+				ctx.textBaseline = 'middle';
+				
+				const text = textLines[0]; // Single line
+				const imageWidth = canvasWidth - (borderWidth * 2);
+				const imageHeight = canvasHeight - (borderWidth * 2);
+				
+				// Position text at bottom center, scaled to image width
+				const textX = canvasWidth / 2;
+				const textY = borderWidth + imageHeight + (borderWidth / 2);
+				
+				// Scale font to fit within image width with some padding
+				const maxTextWidth = imageWidth * 0.95;
+				let currentFontSize = fontSize;
+				ctx.font = `${currentFontSize}px ${fontFamily}`;
+				
+				while (ctx.measureText(text).width > maxTextWidth && currentFontSize > 8) {
+					currentFontSize--;
+					ctx.font = `${currentFontSize}px ${fontFamily}`;
+				}
+				
+				ctx.fillText(text, textX, textY);
+			}
+			
+			function downloadExifOverlay() {
+				if (!currentImageFile) return;
+				
+				// Get current settings
+				const borderWidth = parseInt(document.getElementById('border-width').value);
+				const borderColor = document.getElementById('border-color').value;
+				const fontSize = parseInt(document.getElementById('font-size').value);
+				const textColor = document.getElementById('text-color').value;
+				const fontFamily = document.getElementById('font-family').value;
+				
+				// Create high-resolution canvas
+				const canvas = document.createElement('canvas');
+				const ctx = canvas.getContext('2d');
+				
+				// Load the image using FileReader (same approach as panorama splitter)
+				const reader = new FileReader();
+				reader.onload = (e) => {
+					const img = new Image();
+					img.onload = () => {
+						// Use original image dimensions
+						const imageWidth = img.width;
+						const imageHeight = img.height;
+						
+						// Scale border width proportionally for high-res
+						const scaleFactor = Math.max(imageWidth, imageHeight) / 800; // Assume 800px is our reference size
+						const highResBorderWidth = Math.max(borderWidth * scaleFactor, borderWidth);
+						const highResFontSize = Math.max(fontSize * scaleFactor, fontSize);
+						
+						// Set canvas size
+						canvas.width = imageWidth + (highResBorderWidth * 2);
+						canvas.height = imageHeight + (highResBorderWidth * 2);
+					
+					// Draw border
+					ctx.fillStyle = borderColor;
+					ctx.fillRect(0, 0, canvas.width, canvas.height);
+					
+					// Draw image
+					ctx.drawImage(img, highResBorderWidth, highResBorderWidth, imageWidth, imageHeight);
+					
+					// Get selected EXIF data
+					const selectedExifData = getSelectedExifData();
+					
+					// Draw EXIF text
+					drawExifText(ctx, selectedExifData, canvas.width, canvas.height, highResBorderWidth, highResFontSize, textColor, fontFamily);
+					
+					// Download the image
+					canvas.toBlob(blob => {
+						const url = URL.createObjectURL(blob);
+						const a = document.createElement('a');
+						a.href = url;
+						a.download = `exif-overlay-${Date.now()}.jpg`;
+						document.body.appendChild(a);
+						a.click();
+						document.body.removeChild(a);
+						URL.revokeObjectURL(url);
+					}, 'image/jpeg', 0.95);
+				};
+				
+				img.src = e.target.result;
+			};
+			
+			reader.readAsDataURL(currentImageFile);
+		}
 
 			// Panorama splitter functions
 			function isPanorama(width, height) {
@@ -1293,6 +1967,10 @@ Generated on: ${currentDate}
 			splitPanoramaBtn.addEventListener('click', openSplitterModal);
 			closeModalBtn.addEventListener('click', closeSplitterModal);
 			
+			// Event listeners for EXIF overlay
+			createExifOverlayBtn.addEventListener('click', openExifOverlayModal);
+			closeExifModalBtn.addEventListener('click', closeExifOverlayModal);
+			
 			// Close modal when clicking outside
 			panoSplitterModal.addEventListener('click', (e) => {
 				if (e.target === panoSplitterModal) {
@@ -1300,10 +1978,21 @@ Generated on: ${currentDate}
 				}
 			});
 			
+			exifOverlayModal.addEventListener('click', (e) => {
+				if (e.target === exifOverlayModal) {
+					closeExifOverlayModal();
+				}
+			});
+			
 			// Close modal with escape key
 			document.addEventListener('keydown', (e) => {
-				if (e.key === 'Escape' && panoSplitterModal.style.display === 'block') {
-					closeSplitterModal();
+				if (e.key === 'Escape') {
+					if (panoSplitterModal.style.display === 'block') {
+						closeSplitterModal();
+					}
+					if (exifOverlayModal.style.display === 'block') {
+						closeExifOverlayModal();
+					}
 				}
 			});
 
@@ -1607,6 +2296,7 @@ Generated on: ${currentDate}
 			function handleFile(file) {
 				// Store the current file for panorama splitter
 				currentImageFile = file;
+				console.log('Image file set:', file ? file.name : 'null');
 				
 				// Validate file type
 				if (!file || file.type !== "image/jpeg") {
@@ -1619,7 +2309,8 @@ Generated on: ${currentDate}
 					mapDiv.style.display = "none";
 					imagePreviewDiv.innerHTML = "";
 					hideSplitterButton();
-					currentImageFile = null;
+					hideExifOverlayButton();
+					currentExifData = null;
 					return;
 				}
 				
@@ -1655,6 +2346,15 @@ Generated on: ${currentDate}
 						!exifData.error &&
 						Object.keys(exifData).length > 0
 					) {
+						// Store EXIF data for overlay feature
+						currentExifData = exifData;
+						showExifOverlayButton();
+						
+						// Update EXIF overlay preview if modal is open
+						if (exifOverlayModal && exifOverlayModal.style.display === 'block') {
+							updateExifOverlayPreview();
+						}
+						
 						let table =
 							'<table style="width:50%;border-collapse:collapse;">';
 						for (const key in exifData) {
