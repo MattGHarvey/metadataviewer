@@ -4,476 +4,506 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>JPG Metadata Viewer, Panorama Splitter & EXIF Overlay Creator</title>
-		<meta
-			name="description"
-			content="View JPG EXIF metadata, split panoramic photos for Instagram, and create stylish EXIF overlay images. No uploads, full privacy. Professional photo tools in your browser."
-		/>
-		<meta
-			name="keywords"
-			content="EXIF, JPG, metadata, photo, privacy, map, GPS, panorama, Instagram, carousel, split, social media, overlay, border, typography, photography"
-		/>
-
-		<!-- PWA Icons -->
-		<link rel="icon" type="image/png" href="./images/icon-192.png" />
-		<link rel="apple-touch-icon" href="./images/icon-192.png" />
-
-		<!-- PWA Manifest -->
-		<link rel="manifest" href="./manifest.json" />
-
-		<!-- PWA Meta Tags -->
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+		<link rel="manifest" href="manifest.json" />
 		<meta name="theme-color" content="#1976d2" />
-		<meta name="mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-		<meta name="apple-mobile-web-app-title" content="EXIF Viewer" />
-
-		<link rel="canonical" href="https://exif.robotsprocket.com/" />
-		<meta property="og:title" content="Online JPG EXIF Metadata Viewer" />
-		<meta
-			property="og:description"
-			content="View and map JPG EXIF metadata instantly in your browser. No uploads, full privacy."
-		/>
-		<meta
-			property="og:image"
-			content="https://exif.robotsprocket.com/images/icon-512.png"
-		/>
-		<meta property="og:type" content="website" />
-		<meta property="og:url" content="https://exif.robotsprocket.com/" />
+		<link rel="icon" type="image/png" href="images/icon-192.png" />
+		<meta name="description" content="Extract and view EXIF metadata from JPG images, split panoramas for Instagram, and create custom overlays." />
 		
-		<!-- Google Fonts -->
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;500;600;700&family=Lato:wght@400;700&family=Montserrat:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-		<!-- Google Analytics will be loaded by app.js -->
-
-		<!-- PWA Service Worker -->
-		<!-- Service Worker and PWA functionality moved to app.js -->
-		<link
-			rel="stylesheet"
-			href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-		/>
 		<style>
-			html,
-			body {
-				font-family: "Segoe UI", "Helvetica Neue", Arial,
-					"Liberation Sans", sans-serif;
-				padding-bottom: 120px; /* Space for fixed footer */
-			}
-			#drop-area {
-				border: 2px dashed #ccc;
-				border-radius: 20px;
-				width: 400px;
-				height: 200px;
-				margin: 50px auto;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				font-size: 1.2em;
-				color: #888;
-			}
-			#image-preview {
-				width: 80%;
-				margin: 20px auto;
-				text-align: center;
-			}
-			#metadata {
-				width: 60%;
-				margin: 20px auto;
-				background: #f9f9f9;
-				padding: 20px;
-				border-radius: 10px;
-				font-family: monospace;
-				white-space: pre-wrap;
-			}
-			#metadata table {
-				font-size: 1em;
-				width: 50%;
-				margin: 0 auto;
-				border-collapse: collapse;
-			}
-			#metadata th,
-			#metadata td {
-				border: 1px solid #ccc;
-				padding: 2px 6px;
-				text-align: left;
-			}
-			#metadata th {
-				background-color: #f2f2f2;
-			}
-			#map {
-				width: 50%;
-				height: 500px;
-				margin: 20px auto;
-				border-radius: 10px;
-				border: 1px solid #ccc;
+			.tab-content {
 				display: none;
 			}
 			
-			/* Panorama splitter modal styles */
-			@media (max-width: 768px) {
-				#pano-splitter-modal .modal-content {
-					margin: 20px;
-					max-width: calc(100% - 40px);
-					max-height: calc(100% - 40px);
-				}
-				
-				#splitter-content > div {
-					flex-direction: column !important;
-				}
-				
-				#splitter-content > div > div {
-					min-width: auto !important;
-				}
-			}
-			
-			.slice-item:hover {
-				transform: scale(1.05);
-				transition: transform 0.2s ease;
-			}
-			
-			/* Aspect ratio support with fallback */
-			.slice-aspect-container {
-				width: 100%;
-				position: relative;
-				overflow: hidden;
-				border-radius: 4px;
-			}
-			
-			.slice-aspect-container::before {
-				content: "";
+			.tab-content.active {
 				display: block;
-				padding-top: 125%; /* 5/4 = 1.25 = 125% for 4:5 aspect ratio */
 			}
 			
-			.slice-aspect-container img {
-				position: absolute;
-				top: 0;
-				left: 0;
+			.tab-button:hover {
+				background: #1565c0 !important;
+				color: white !important;
+			}
+			
+			/* Timeline Styles */
+			.timeline-container {
+				background: white;
+				border-radius: 12px;
+				padding: 20px;
+				box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+				margin-top: 20px;
+			}
+			
+			.timeline-bar {
+				position: relative;
 				width: 100%;
-				height: 100%;
-				object-fit: cover;
+				height: 60px;
+				background: linear-gradient(to right, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #16213e 75%, #1a1a2e 100%);
+				border-radius: 30px;
+				margin: 120px 0 40px 0;
+				border: 3px solid #e0e0e0;
 			}
 			
-			/* Modern browsers with aspect-ratio support */
-			@supports (aspect-ratio: 4/5) {
-				.slice-aspect-container {
-					aspect-ratio: 4/5;
-				}
-				
-				.slice-aspect-container::before {
-					display: none;
-				}
-				
-				.slice-aspect-container img {
-					position: static;
-				}
+			.timeline-marker {
+				position: absolute;
+				width: 4px;
+				height: 66px;
+				background: #ffd700;
+				top: -3px;
+				border-radius: 2px;
+				box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+			}
+			
+			.timeline-label {
+				position: absolute;
+				transform: translateX(-50%);
+				background: white;
+				padding: 6px 10px;
+				border-radius: 6px;
+				font-size: 11px;
+				white-space: nowrap;
+				box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+				border: 1px solid #e0e0e0;
+				z-index: 2;
+				min-width: 80px;
+				text-align: center;
+			}
+			
+			.timeline-label.level-1 { bottom: 75px; }
+			.timeline-label.level-2 { bottom: 115px; }
+			.timeline-label.level-3 { bottom: 155px; }
+			
+			.timeline-label::after {
+				content: '';
+				position: absolute;
+				bottom: -6px;
+				left: 50%;
+				transform: translateX(-50%);
+				width: 2px;
+				height: 12px;
+				background: #ccc;
+			}
+			
+			.timeline-info {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 15px;
+				margin-top: 20px;
+			}
+			
+			.info-card {
+				background: #f8f9fa;
+				border-radius: 8px;
+				padding: 15px;
+				text-align: center;
+				border: 1px solid #e9ecef;
+			}
+			
+			.info-card h5 {
+				font-size: 14px;
+				font-weight: 600;
+			}
+			
+			.info-card div {
+				font-size: 12px;
+				color: #666;
+				line-height: 1.4;
 			}
 		</style>
 	</head>
 	<body>
-		<!-- Privacy blurb at the top of the page -->
-		<div
-			style="
-				width: 80%;
-				margin: 20px auto 0 auto;
-				padding: 10px 20px;
-				background: #eaf6ff;
-				border-radius: 10px;
-				border: 1px solid #b3d8ff;
-				font-size: 1.1em;
-				color: #333;
-			"
-		>
-			<strong>Privacy Notice:</strong> All metadata viewing, panorama processing, and overlay creation is done entirely in
-			your browser. Your photos are never uploaded to any server.
+		<!-- Navigation Tabs -->
+		<div id="main-tabs" style="
+			width: 80%;
+			margin: 30px auto 20px auto;
+			border-bottom: 2px solid #e0e0e0;
+		">
+			<div style="display: flex; gap: 0;">
+				<button class="tab-button active" data-tab="metadata" style="
+					background: #1976d2;
+					color: white;
+					border: none;
+					padding: 12px 24px;
+					cursor: pointer;
+					border-radius: 8px 8px 0 0;
+					font-weight: 500;
+					transition: background 0.3s ease;
+				">
+					📋 Image Metadata
+				</button>
+				<button class="tab-button" data-tab="daylight" style="
+					background: #f5f5f5;
+					color: #666;
+					border: none;
+					padding: 12px 24px;
+					cursor: pointer;
+					border-radius: 8px 8px 0 0;
+					font-weight: 500;
+					transition: background 0.3s ease;
+					margin-left: 4px;
+				">
+					☀️ Daylight Timeline
+				</button>
+			</div>
 		</div>
-		<!-- Main heading -->
-		<h1
-			style="
-				width: 80%;
-				margin: 20px auto 0 auto;
-				text-align: center;
-				font-size: 2em;
-			"
-		>
-			JPG Metadata Viewer, Panorama Splitter & EXIF Overlay Creator
-		</h1>
-		<!-- Drag-and-drop area for JPG files -->
-		<div id="drop-area">Drop JPG file here</div>
-
-		<!-- File picker for JPG files -->
-		<div style="width: 80%; margin: 10px auto; text-align: center">
-			<label for="file-picker" style="font-size: 1.1em"
-				>Or select a JPG file:</label
-			>
-			<input
-				type="file"
-				id="file-picker"
-				accept="image/jpeg"
-				style="margin-left: 10px"
-			/>
-		</div>
-		<!-- Image preview area -->
-		<div
-			id="image-preview"
-			style="width: 80%; margin: 20px auto; text-align: center"
-		></div>
 		
-		<!-- Instagram optimization button area -->
-		<div
-			id="splitter-button-area"
-			style="width: 80%; margin: 10px auto; text-align: center; display: none;"
-		>
-			<button
-				id="split-panorama-btn"
-				style="
+		<!-- Tab Content Areas -->
+		<div id="tab-content" style="width: 80%; margin: 0 auto;">
+			<!-- Metadata Tab Content -->
+			<div id="metadata-tab" class="tab-content active">
+				<!-- File upload area -->
+				<div id="drop-area" style="
+					width: 100%;
+					height: 200px;
+					border: 3px dashed #cccccc;
+					border-radius: 20px;
+					display: flex;
+					flex-direction: column;
+					justify-content: center;
+					align-items: center;
+					margin: 20px auto;
+					cursor: pointer;
+					transition: all 0.3s ease;
+					background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+				">
+					<div style="text-align: center; color: #666;">
+						<div style="font-size: 48px; margin-bottom: 10px;">📷</div>
+						<div style="font-size: 18px; font-weight: 500; margin-bottom: 5px;">
+							Drop your JPG image here or click to browse
+						</div>
+						<div style="font-size: 14px; opacity: 0.7;">
+							EXIF metadata • GPS mapping • Panorama splitting • Image compression
+						</div>
+					</div>
+					<input
+						type="file"
+						id="file-picker"
+						accept="image/jpeg,image/jpg"
+						style="display: none"
+					/>
+				</div>
+
+				<!-- Image preview area -->
+				<div
+					id="image-preview"
+					style="width: 100%; margin: 20px auto; text-align: center"
+				></div>
+
+				<!-- Feature buttons - right after image, before metadata -->
+				<!-- Instagram optimization button area -->
+				<div
+					id="splitter-button-area"
+					style="width: 100%; margin: 10px auto; text-align: center; display: none;"
+				>
+					<button
+						id="split-panorama-btn"
+						style="
+							background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+							color: white;
+							border: none;
+							padding: 12px 24px;
+							border-radius: 8px;
+							font-size: 16px;
+							font-weight: 600;
+							cursor: pointer;
+							box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+							transition: all 0.3s ease;
+							margin: 10px;
+						"
+						onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(102, 126, 234, 0.4)'"
+						onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.3)'"
+					>
+						📱 Split for Instagram
+					</button>
+				</div>
+				
+				<!-- EXIF overlay button area -->
+				<div
+					id="exif-overlay-button-area"
+					style="width: 100%; margin: 10px auto; text-align: center; display: none;"
+				>
+					<button
+						id="create-exif-overlay-btn"
+						style="
+							background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+							color: white;
+							border: none;
+							padding: 12px 24px;
+							border-radius: 8px;
+							font-size: 16px;
+							font-weight: 600;
+							cursor: pointer;
+							box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+							transition: all 0.3s ease;
+							margin: 10px;
+						"
+						onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255, 107, 107, 0.4)'"
+						onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(255, 107, 107, 0.3)'"
+					>
+						📋 Create EXIF Overlay
+					</button>
+				</div>
+				
+				<!-- Image compression button area -->
+				<div
+					id="compression-button-area"
+					style="width: 100%; margin: 10px auto; text-align: center; display: none;"
+				>
+					<button
+						id="compress-image-btn"
+						style="
+							background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+							color: white;
+							border: none;
+							padding: 12px 24px;
+							border-radius: 8px;
+							font-size: 16px;
+							font-weight: 600;
+							cursor: pointer;
+							box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+							transition: all 0.3s ease;
+							margin: 10px;
+						"
+						onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(76, 175, 80, 0.4)'"
+						onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.3)'"
+					>
+						🗜️ Compress Image
+					</button>
+				</div>
+
+				<!-- Metadata display area -->
+				<div id="metadata" style="width: 100%; margin: 20px auto;"></div>
+
+				<!-- Map display area -->
+				<div id="map" style="width: 100%; height: 400px; margin: 20px auto; display: none;"></div>
+			</div>
+			
+			<!-- Daylight Timeline Tab Content -->
+			<div id="daylight-tab" class="tab-content" style="display: none;">
+				<div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+					<h3 style="margin: 0 0 20px 0; color: #333; text-align: center;">📅 Daylight Timeline Calculator</h3>
+					
+					<!-- Location Input -->
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+						<div>
+							<label style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">
+								📍 Location
+							</label>
+							<div style="display: flex; gap: 8px;">
+								<input 
+									type="text" 
+									id="location-input" 
+									placeholder="Enter city or location..."
+									style="
+										flex: 1;
+										padding: 12px;
+										border: 2px solid #e0e0e0;
+										border-radius: 8px;
+										font-size: 14px;
+										transition: border-color 0.3s ease;
+									"
+								/>
+								<button 
+									id="current-location-btn"
+									style="
+										background: #1976d2;
+										color: white;
+										border: none;
+										padding: 12px 16px;
+										border-radius: 8px;
+										font-size: 14px;
+										cursor: pointer;
+										white-space: nowrap;
+										transition: background 0.3s ease;
+									"
+								>
+									📍 Current
+								</button>
+							</div>
+						</div>
+						
+						<div>
+							<label style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">
+								📅 Date
+							</label>
+							<input 
+								type="date" 
+								id="date-input"
+								style="
+									width: 100%;
+									padding: 12px;
+									border: 2px solid #e0e0e0;
+									border-radius: 8px;
+									font-size: 14px;
+									transition: border-color 0.3s ease;
+								"
+							/>
+						</div>
+					</div>
+					
+					<!-- Calculate Button -->
+					<div style="text-align: center; margin-bottom: 20px;">
+						<button 
+							id="calculate-daylight-btn"
+							style="
+								background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+								color: white;
+								border: none;
+								padding: 14px 32px;
+								border-radius: 8px;
+								font-size: 16px;
+								font-weight: 600;
+								cursor: pointer;
+								box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+								transition: all 0.3s ease;
+							"
+						>
+							☀️ Calculate Timeline
+						</button>
+					</div>
+					
+					<!-- Timeline Display -->
+					<div id="daylight-timeline" style="display: none;"></div>
+				</div>
+			</div>
+		</div>
+
+		<!-- All the modals and footer content... -->
+		<!-- Panorama splitter modal -->
+		<div id="pano-splitter-modal" style="
+			display: none;
+			position: fixed;
+			z-index: 1000;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0,0,0,0.8);
+		">
+			<div style="
+				background-color: #fefefe;
+				margin: 2% auto;
+				padding: 0;
+				border-radius: 12px;
+				width: 95%;
+				max-width: 1200px;
+				max-height: 90vh;
+				overflow-y: auto;
+				box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+			">
+				<div style="
 					background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 					color: white;
-					border: none;
-					padding: 12px 24px;
-					border-radius: 8px;
-					font-size: 16px;
-					font-weight: 600;
-					cursor: pointer;
-					box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-					transition: all 0.3s ease;
-					margin: 10px;
-				"
-				onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(102, 126, 234, 0.4)'"
-				onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.3)'"
-			>
-				📱 Split for Instagram
-			</button>
+					padding: 20px;
+					border-radius: 12px 12px 0 0;
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+				">
+					<h2 style="margin: 0; font-size: 24px;">📱 Instagram Panorama Splitter</h2>
+					<span id="close-modal" style="
+						font-size: 32px;
+						font-weight: bold;
+						cursor: pointer;
+						color: white;
+						opacity: 0.8;
+						transition: opacity 0.3s ease;
+					">&times;</span>
+				</div>
+				<div id="splitter-content" style="padding: 20px;"></div>
+			</div>
 		</div>
-		
-		<!-- EXIF overlay button area -->
-		<div
-			id="exif-overlay-button-area"
-			style="width: 80%; margin: 10px auto; text-align: center; display: none;"
-		>
-			<button
-				id="create-exif-overlay-btn"
-				style="
+
+		<!-- EXIF overlay modal -->
+		<div id="exif-overlay-modal" style="
+			display: none;
+			position: fixed;
+			z-index: 1000;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0,0,0,0.8);
+		">
+			<div style="
+				background-color: #fefefe;
+				margin: 2% auto;
+				padding: 0;
+				border-radius: 12px;
+				width: 95%;
+				max-width: 1200px;
+				max-height: 90vh;
+				overflow-y: auto;
+				box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+			">
+				<div style="
 					background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
 					color: white;
-					border: none;
-					padding: 12px 24px;
-					border-radius: 8px;
-					font-size: 16px;
-					font-weight: 600;
-					cursor: pointer;
-					box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-					transition: all 0.3s ease;
-					margin: 10px;
-				"
-				onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255, 107, 107, 0.4)'"
-				onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(255, 107, 107, 0.3)'"
-			>
-				📋 Create EXIF Overlay
-			</button>
+					padding: 20px;
+					border-radius: 12px 12px 0 0;
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+				">
+					<h2 style="margin: 0; font-size: 24px;">📋 EXIF Overlay Creator</h2>
+					<span id="close-exif-modal" style="
+						font-size: 32px;
+						font-weight: bold;
+						cursor: pointer;
+						color: white;
+						opacity: 0.8;
+						transition: opacity 0.3s ease;
+					">&times;</span>
+				</div>
+				<div id="exif-overlay-content" style="padding: 20px;"></div>
+			</div>
 		</div>
-		
-		<!-- Image compression button area -->
-		<div
-			id="compression-button-area"
-			style="width: 80%; margin: 10px auto; text-align: center; display: none;"
-		>
-			<button
-				id="compress-image-btn"
-				style="
+
+		<!-- Compression modal -->
+		<div id="compression-modal" style="
+			display: none;
+			position: fixed;
+			z-index: 1000;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0,0,0,0.8);
+		">
+			<div style="
+				background-color: #fefefe;
+				margin: 2% auto;
+				padding: 0;
+				border-radius: 12px;
+				width: 95%;
+				max-width: 800px;
+				max-height: 90vh;
+				overflow-y: auto;
+				box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+			">
+				<div style="
 					background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
 					color: white;
-					border: none;
-					padding: 12px 24px;
-					border-radius: 8px;
-					font-size: 16px;
-					font-weight: 600;
-					cursor: pointer;
-					box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
-					transition: all 0.3s ease;
-					margin: 10px;
-				"
-				onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(76, 175, 80, 0.4)'"
-				onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.3)'"
-			>
-				🗜️ Compress Image
-			</button>
-		</div>
-		
-		<!-- Panorama splitter modal -->
-		<div id="pano-splitter-modal" style="display: none;">
-			<div class="modal-overlay" style="
-				position: fixed;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				background: rgba(0, 0, 0, 0.7);
-				z-index: 1000;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-			">
-				<div class="modal-content" style="
-					background: white;
-					border-radius: 12px;
-					padding: 24px;
-					max-width: 90%;
-					max-height: 90%;
-					overflow-y: auto;
-					position: relative;
-					box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+					padding: 20px;
+					border-radius: 12px 12px 0 0;
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
 				">
-					<button id="close-modal" style="
-						position: absolute;
-						top: 12px;
-						right: 12px;
-						background: none;
-						border: none;
-						font-size: 24px;
+					<h2 style="margin: 0; font-size: 24px;">🗜️ Image Compression</h2>
+					<span id="close-compression-modal" style="
+						font-size: 32px;
+						font-weight: bold;
 						cursor: pointer;
-						color: #666;
-						width: 32px;
-						height: 32px;
-						border-radius: 50%;
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						transition: background 0.2s;
-					"
-					onmouseover="this.style.background='#f0f0f0'"
-					onmouseout="this.style.background='none'"
-					>&times;</button>
-					
-					<h2 style="margin: 0 0 16px 0; color: #333;">Instagram Panorama Splitter</h2>
-					<p style="margin: 0 0 24px 0; color: #666;">Split your panoramic photo into Instagram-friendly carousel posts</p>
-					
-					<div id="splitter-content">
-						<!-- Content will be populated by JavaScript -->
-					</div>
+						color: white;
+						opacity: 0.8;
+						transition: opacity 0.3s ease;
+					">&times;</span>
 				</div>
+				<div id="compression-content" style="padding: 20px;"></div>
 			</div>
 		</div>
-		
-		<!-- EXIF Overlay modal -->
-		<div id="exif-overlay-modal" style="display: none;">
-			<div class="modal-overlay" style="
-				position: fixed;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				background: rgba(0, 0, 0, 0.7);
-				z-index: 1000;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-			">
-				<div class="modal-content" style="
-					background: white;
-					border-radius: 12px;
-					padding: 24px;
-					max-width: 95%;
-					max-height: 95%;
-					overflow-y: auto;
-					position: relative;
-					box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-					width: 900px;
-				">
-					<button id="close-exif-modal" style="
-						position: absolute;
-						top: 12px;
-						right: 12px;
-						background: none;
-						border: none;
-						font-size: 24px;
-						cursor: pointer;
-						color: #666;
-						width: 32px;
-						height: 32px;
-						border-radius: 50%;
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						transition: background 0.2s;
-					"
-					onmouseover="this.style.background='#f0f0f0'"
-					onmouseout="this.style.background='none'"
-					>&times;</button>
-					
-					<h2 style="margin: 0 0 16px 0; color: #333;">EXIF Data Overlay Creator</h2>
-					<p style="margin: 0 0 24px 0; color: #666;">Create Instagram-ready images with stylish EXIF data overlays</p>
-					
-					<div id="exif-overlay-content">
-						<!-- Content will be populated by JavaScript -->
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<!-- Image compression modal -->
-		<div id="compression-modal" style="display: none;">
-			<div class="modal-overlay" style="
-				position: fixed;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				background: rgba(0, 0, 0, 0.7);
-				z-index: 1000;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				padding: 20px;
-			">
-				<div class="modal-content" style="
-					background: white;
-					border-radius: 16px;
-					padding: 0;
-					max-width: 95%;
-					max-height: 95%;
-					overflow-y: auto;
-					position: relative;
-					box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-					width: 800px;
-				">
-					<button id="close-compression-modal" style="
-						position: absolute;
-						top: 12px;
-						right: 12px;
-						background: none;
-						border: none;
-						font-size: 24px;
-						cursor: pointer;
-						color: #666;
-						width: 32px;
-						height: 32px;
-						border-radius: 50%;
-						display: flex;
-						align-items: center;
-						justify-content: center;
-						transition: background 0.2s;
-					"
-					onmouseover="this.style.background='#f0f0f0'"
-					onmouseout="this.style.background='none'"
-					>&times;</button>
-					
-					<h2 style="margin: 0 0 16px 0; color: #333;">Image Compression</h2>
-					<p style="margin: 0 0 24px 0; color: #666;">Reduce image file size while maintaining quality</p>
-					
-					<div id="compression-content">
-						<!-- Content will be populated by JavaScript -->
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<!-- Metadata table area -->
-		<div id="metadata"></div>
-		<!-- Map area for GPS coordinates -->
-		<div id="map"></div>
-		<!-- Footer with copyright and links -->
-		<footer
+
+	<footer
 			style="
 				position: fixed;
 				bottom: 0;
@@ -719,6 +749,7 @@
 		<script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/compressorjs@1.2.1/dist/compressor.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
 		<script src="./js/jszip.min.js"></script>
 		<script src="./js/FileSaver.min.js"></script>
 		<script src="./js/app.js"></script>

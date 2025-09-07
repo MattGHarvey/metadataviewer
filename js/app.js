@@ -286,6 +286,14 @@ function initializeApp() {
 	const compressionModal = document.getElementById("compression-modal");
 	const closeCompressionModalBtn = document.getElementById("close-compression-modal");
 	const compressionContent = document.getElementById("compression-content");
+	const mainTabs = document.getElementById("main-tabs");
+	const tabContent = document.getElementById("tab-content");
+	const tabButtons = document.querySelectorAll(".tab-button");
+	const locationInput = document.getElementById("location-input");
+	const currentLocationBtn = document.getElementById("current-location-btn");
+	const dateInput = document.getElementById("date-input");
+	const calculateDaylightBtn = document.getElementById("calculate-daylight-btn");
+	const daylightTimeline = document.getElementById("daylight-timeline");
 
 	// Make elements globally available
 	window.dropArea = dropArea;
@@ -308,6 +316,13 @@ function initializeApp() {
 	window.compressionModal = compressionModal;
 	window.closeCompressionModalBtn = closeCompressionModalBtn;
 	window.compressionContent = compressionContent;
+	window.mainTabs = mainTabs;
+	window.tabContent = tabContent;
+	window.locationInput = locationInput;
+	window.currentLocationBtn = currentLocationBtn;
+	window.dateInput = dateInput;
+	window.calculateDaylightBtn = calculateDaylightBtn;
+	window.daylightTimeline = daylightTimeline;
 
 	// Initialize global variables
 	window.currentMap = null;
@@ -318,6 +333,24 @@ function initializeApp() {
 	window.fullViewImage = null;
 	window.currentExifData = null;
 	window.selectedAspectRatio = null;
+	window.currentLocation = null;
+
+	// Set default date to today
+	if (dateInput) {
+		dateInput.value = new Date().toISOString().split('T')[0];
+	}
+
+	// Initialize tab system
+	initializeTabs();
+	
+	// Show tabs immediately - no need to wait for image load
+	if (mainTabs) {
+		mainTabs.style.display = 'block';
+	}
+	if (tabContent) {
+		tabContent.style.display = 'block';
+	}
+	
 	window.overlayPreviewCanvas = null;
 
 	// Configuration constants
@@ -379,6 +412,21 @@ function setupEventListeners() {
 	splitPanoramaBtn.addEventListener("click", openSplitterModal);
 	createExifOverlayBtn.addEventListener("click", openExifOverlayModal);
 	compressImageBtn.addEventListener("click", openCompressionModal);
+
+	// Daylight timeline events
+	if (currentLocationBtn) {
+		currentLocationBtn.addEventListener("click", getCurrentLocation);
+	}
+	if (calculateDaylightBtn) {
+		calculateDaylightBtn.addEventListener("click", calculateDaylightTimeline);
+	}
+	if (locationInput) {
+		locationInput.addEventListener("keypress", function(e) {
+			if (e.key === 'Enter') {
+				calculateDaylightTimeline();
+			}
+		});
+	}
 
 	// Close modals when clicking outside
 	panoSplitterModal.addEventListener("click", (e) => {
@@ -707,6 +755,17 @@ function showTemporaryMessage(message) {
 // ========================
 
 function showButtons(file, exifData) {
+	// Show the tab navigation
+	if (mainTabs) {
+		mainTabs.style.display = 'block';
+	}
+	if (tabContent) {
+		tabContent.style.display = 'block';
+	}
+
+	// Switch to metadata tab when image is loaded
+	showTab('metadata');
+
 	// Show Instagram splitter button for all images (not just panoramic)
 	// This tool can optimize any image for Instagram with different aspect ratios
 	showSplitterButton();
@@ -726,7 +785,9 @@ function showButtons(file, exifData) {
 // ===========================
 
 function showSplitterButton() {
-	splitterButtonArea.style.display = 'block';
+	if (splitterButtonArea) {
+		splitterButtonArea.style.display = 'block';
+	}
 }
 
 function hideSplitterButton() {
@@ -1194,7 +1255,9 @@ function resetSplitter() {
 // =====================
 
 function showExifOverlayButton() {
-	exifOverlayButtonArea.style.display = 'block';
+	if (exifOverlayButtonArea) {
+		exifOverlayButtonArea.style.display = 'block';
+	}
 }
 
 function hideExifOverlayButton() {
@@ -2055,7 +2118,9 @@ function getPrettyExifInfo(key, value) {
 // ===========================
 
 function showCompressionButton() {
-	compressionButtonArea.style.display = 'block';
+	if (compressionButtonArea) {
+		compressionButtonArea.style.display = 'block';
+	}
 }
 
 function hideCompressionButton() {
@@ -2224,9 +2289,9 @@ function initializeCompressionInterface() {
 					</div>
 				</div>
 				
-				<!-- Right Panel - Preview & Results -->
+				<!-- Right Panel - Results -->
 				<div>
-					<h3 style="margin: 0 0 16px 0; color: #333;">Preview & Results</h3>
+					<h3 style="margin: 0 0 16px 0; color: #333;">Compression Results</h3>
 					
 					<div style="margin-bottom: 16px;">
 						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
@@ -2253,26 +2318,8 @@ function initializeCompressionInterface() {
 						background: #f9f9f9;
 						margin-bottom: 16px;
 					">
-						<div style="color: #666;">Click "Compress Image" to see preview</div>
+						<div style="color: #666;">Click "Compress Image" to compress and download</div>
 					</div>
-					
-					<button 
-						id="download-compressed" 
-						style="
-							background: #2196f3;
-							color: white;
-							border: none;
-							padding: 12px 24px;
-							border-radius: 6px;
-							cursor: pointer;
-							font-size: 14px;
-							font-weight: 500;
-							width: 100%;
-						" 
-						disabled
-					>
-						📥 Download Compressed Image
-					</button>
 				</div>
 			</div>
 		</div>
@@ -2392,11 +2439,7 @@ function compressImage() {
 			// Complete progress
 			clearInterval(progressInterval);
 			progressBar.style.width = '100%';
-			progressText.textContent = 'Compression complete!';
-			
-			setTimeout(() => {
-				progressContainer.style.display = 'none';
-			}, 1000);
+			progressText.textContent = 'Download starting...';
 			
 			// Update compressed size
 			const compressedSize = (result.size / 1024 / 1024).toFixed(2);
@@ -2415,41 +2458,42 @@ function compressImage() {
 			
 			compressedSizeDiv.innerHTML = sizeDisplay;
 			
-			// Show preview
-			const reader = new FileReader();
-			reader.onload = function(e) {
-				previewContainer.innerHTML = `
-					<img src="${e.target.result}" alt="Compressed preview" style="
-						max-width: 100%;
-						max-height: 300px;
-						border-radius: 4px;
-						box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-					">
-				`;
+			// Skip preview and directly download the file
+			const formatExtensions = {
+				'image/jpeg': 'jpg',
+				'image/webp': 'webp',
+				'image/png': 'png'
 			};
-			reader.readAsDataURL(result);
 			
-			// Enable download
-			downloadButton.disabled = false;
-			window.compressedImageBlob = result;
+			const selectedFormat = document.getElementById('output-format').value;
+			const extension = formatExtensions[selectedFormat] || 'jpg';
+			const originalName = currentImageFile.name.replace(/\.[^/.]+$/, ""); // Remove original extension
 			
-			downloadButton.onclick = function() {
-				// Generate appropriate filename with correct extension
-				const formatExtensions = {
-					'image/jpeg': 'jpg',
-					'image/webp': 'webp',
-					'image/png': 'png'
-				};
-				
-				const selectedFormat = document.getElementById('output-format').value;
-				const extension = formatExtensions[selectedFormat] || 'jpg';
-				const originalName = currentImageFile.name.replace(/\.[^/.]+$/, ""); // Remove original extension
-				
-				const link = document.createElement('a');
-				link.download = `compressed_${originalName}.${extension}`;
-				link.href = URL.createObjectURL(result);
-				link.click();
-			};
+			const link = document.createElement('a');
+			link.download = `compressed_${originalName}.${extension}`;
+			link.href = URL.createObjectURL(result);
+			link.click();
+			
+			// Clean up the blob URL after a short delay
+			setTimeout(() => {
+				URL.revokeObjectURL(link.href);
+			}, 1000);
+			
+			// Update preview container to show success message instead of image
+			previewContainer.innerHTML = `
+				<div style="color: #4caf50; text-align: center;">
+					<div style="font-size: 24px; margin-bottom: 8px;">✅</div>
+					<div style="font-weight: 500;">Download Started!</div>
+					<div style="font-size: 12px; color: #666; margin-top: 4px;">
+						Compressed file has been downloaded
+					</div>
+				</div>
+			`;
+			
+			// Hide progress after a short delay
+			setTimeout(() => {
+				progressContainer.style.display = 'none';
+			}, 1500);
 		},
 		error(err) {
 			clearInterval(progressInterval);
@@ -2463,4 +2507,424 @@ function compressImage() {
 			`;
 		}
 	});
+}
+
+// Tab System Functions
+// ===================
+
+function showTab(tabName) {
+	const tabButtons = document.querySelectorAll('.tab-button');
+	const tabContents = document.querySelectorAll('.tab-content');
+	
+	// Remove active class from all tabs and buttons
+	tabButtons.forEach(btn => {
+		btn.classList.remove('active');
+		btn.style.background = '#f5f5f5';
+		btn.style.color = '#666';
+	});
+	
+	tabContents.forEach(content => {
+		content.classList.remove('active');
+		content.style.display = 'none';
+	});
+	
+	// Find and activate the target tab
+	const targetButton = document.querySelector(`[data-tab="${tabName}"]`);
+	const targetContent = document.getElementById(`${tabName}-tab`);
+	
+	if (targetButton && targetContent) {
+		targetButton.classList.add('active');
+		targetButton.style.background = '#1976d2';
+		targetButton.style.color = 'white';
+		
+		targetContent.classList.add('active');
+		targetContent.style.display = 'block';
+	}
+}
+
+function initializeTabs() {
+	const tabButtons = document.querySelectorAll('.tab-button');
+	const tabContents = document.querySelectorAll('.tab-content');
+	
+	tabButtons.forEach(button => {
+		button.addEventListener('click', function() {
+			const targetTab = this.getAttribute('data-tab');
+			
+			// Remove active class from all tabs and buttons
+			tabButtons.forEach(btn => {
+				btn.classList.remove('active');
+				btn.style.background = '#f5f5f5';
+				btn.style.color = '#666';
+			});
+			
+			tabContents.forEach(content => {
+				content.classList.remove('active');
+				content.style.display = 'none';
+			});
+			
+			// Add active class to clicked button and corresponding content
+			this.classList.add('active');
+			this.style.background = '#1976d2';
+			this.style.color = 'white';
+			
+			const targetContent = document.getElementById(`${targetTab}-tab`);
+			if (targetContent) {
+				targetContent.classList.add('active');
+				targetContent.style.display = 'block';
+			}
+		});
+	});
+}
+
+// Daylight Timeline Functions
+// ===========================
+
+function getCurrentLocation() {
+	if (!navigator.geolocation) {
+		alert('Geolocation is not supported by this browser.');
+		return;
+	}
+	
+	currentLocationBtn.textContent = '📍 Getting...';
+	currentLocationBtn.disabled = true;
+	
+	navigator.geolocation.getCurrentPosition(
+		function(position) {
+			const lat = position.coords.latitude;
+			const lon = position.coords.longitude;
+			
+			// Reverse geocode to get location name
+			fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`)
+				.then(response => response.json())
+				.then(data => {
+					const locationName = data.city || data.locality || data.principalSubdivision || 'Current Location';
+					locationInput.value = locationName;
+					window.currentLocation = { lat, lon, name: locationName };
+					
+					currentLocationBtn.textContent = '📍 Current';
+					currentLocationBtn.disabled = false;
+				})
+				.catch(error => {
+					console.error('Error getting location name:', error);
+					locationInput.value = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+					window.currentLocation = { lat, lon, name: 'Current Location' };
+					
+					currentLocationBtn.textContent = '📍 Current';
+					currentLocationBtn.disabled = false;
+				});
+		},
+		function(error) {
+			console.error('Error getting location:', error);
+			alert('Unable to get your current location. Please enter a location manually.');
+			currentLocationBtn.textContent = '📍 Current';
+			currentLocationBtn.disabled = false;
+		}
+	);
+}
+
+function calculateDaylightTimeline() {
+	const location = locationInput.value.trim();
+	const date = dateInput.value;
+	
+	if (!location) {
+		alert('Please enter a location or use your current location.');
+		return;
+	}
+	
+	if (!date) {
+		alert('Please select a date.');
+		return;
+	}
+	
+	calculateDaylightBtn.textContent = '🔄 Calculating...';
+	calculateDaylightBtn.disabled = true;
+	
+	// If we have current location coordinates, use them directly
+	if (window.currentLocation && locationInput.value === window.currentLocation.name) {
+		generateTimeline(window.currentLocation.lat, window.currentLocation.lon, window.currentLocation.name, date);
+	} else {
+		// Geocode the location
+		geocodeLocation(location, date);
+	}
+}
+
+function geocodeLocation(location, date) {
+	// Use Nominatim for geocoding
+	const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&limit=1`;
+	
+	fetch(geocodeUrl)
+		.then(response => response.json())
+		.then(data => {
+			if (data.length > 0) {
+				const lat = parseFloat(data[0].lat);
+				const lon = parseFloat(data[0].lon);
+				const displayName = data[0].display_name;
+				
+				generateTimeline(lat, lon, displayName, date);
+			} else {
+				alert('Location not found. Please try a different location.');
+				calculateDaylightBtn.textContent = '☀️ Calculate Timeline';
+				calculateDaylightBtn.disabled = false;
+			}
+		})
+		.catch(error => {
+			console.error('Geocoding error:', error);
+			alert('Error finding location. Please try again.');
+			calculateDaylightBtn.textContent = '☀️ Calculate Timeline';
+			calculateDaylightBtn.disabled = false;
+		});
+}
+
+function generateTimeline(lat, lon, locationName, dateString) {
+	const selectedDate = new Date(dateString);
+	
+	// Calculate sun times using SunCalc
+	const times = SunCalc.getTimes(selectedDate, lat, lon);
+	
+	// Calculate sun position for current time or noon if it's a different day
+	const now = new Date();
+	const currentTime = selectedDate.toDateString() === now.toDateString() ? now : new Date(selectedDate.getTime() + 12 * 60 * 60 * 1000); // noon
+	const sunPosition = SunCalc.getPosition(currentTime, lat, lon);
+	
+	// Better timezone estimation: use the browser's timezone if it's for today, otherwise estimate
+	let timezoneOffsetHours;
+	const today = new Date();
+	
+	if (selectedDate.toDateString() === today.toDateString()) {
+		// For today, use browser's current timezone offset
+		// getTimezoneOffset() returns minutes and is negative for timezones ahead of UTC
+		// For CDT (UTC-5), it returns 300, so we need to flip the sign and convert to hours
+		timezoneOffsetHours = today.getTimezoneOffset() / -60;
+	} else {
+		// For other dates, estimate from longitude with DST consideration
+		let baseOffset = Math.round(lon / 15);
+		
+		// Rough DST adjustment for common regions (March-November)
+		const month = selectedDate.getMonth(); // 0-11
+		const isDSTSeason = month >= 2 && month <= 10; // March through November
+		
+		// Common DST regions that add 1 hour in summer
+		const isDSTRegion = (
+			(lon >= -125 && lon <= -65 && lat >= 25 && lat <= 50) || // US/Canada
+			(lon >= -10 && lon <= 40 && lat >= 35 && lat <= 70)       // Europe
+		);
+		
+		if (isDSTSeason && isDSTRegion) {
+			baseOffset += 1; // Add 1 hour for DST
+		}
+		
+		timezoneOffsetHours = baseOffset;
+	}
+	
+	// Create timeline visualization with estimated offset
+	createTimelineVisualization(times, currentTime, locationName, dateString, timezoneOffsetHours);
+	
+	calculateDaylightBtn.textContent = '☀️ Calculate Timeline';
+	calculateDaylightBtn.disabled = false;
+}
+
+function createTimelineVisualization(times, currentTime, locationName, dateString, timezoneOffsetHours = 0) {
+	const formatTime = (date) => {
+		// For today's date, use the browser's timezone handling which includes DST
+		const now = new Date();
+		const selectedDate = new Date(dateString);
+		
+		if (selectedDate.toDateString() === now.toDateString()) {
+			// For today, let the browser handle the timezone conversion automatically
+			return date.toLocaleTimeString('en-US', { 
+				hour: '2-digit', 
+				minute: '2-digit',
+				hour12: false 
+			});
+		} else {
+			// For other dates, use manual offset calculation
+			const localTime = new Date(date.getTime() + (timezoneOffsetHours * 60 * 60 * 1000));
+			const hours = localTime.getUTCHours().toString().padStart(2, '0');
+			const minutes = localTime.getUTCMinutes().toString().padStart(2, '0');
+			return `${hours}:${minutes}`;
+		}
+	};
+	
+	const formatDuration = (start, end) => {
+		const duration = (end - start) / (1000 * 60); // minutes
+		const hours = Math.floor(duration / 60);
+		const minutes = Math.floor(duration % 60);
+		return `${hours}h ${minutes}m`;
+	};
+	
+	// Calculate day duration
+	const dayDuration = formatDuration(times.sunrise, times.sunset);
+	const nightDuration = formatDuration(times.sunset, new Date(times.sunrise.getTime() + 24 * 60 * 60 * 1000));
+	
+	// Create timeline markers using ORIGINAL UTC times for positioning
+	const timelineEvents = [
+		{ time: times.nauticalDawn, label: 'Nautical Dawn', type: 'dawn' },
+		{ time: times.dawn, label: 'Civil Dawn', type: 'dawn' },
+		{ time: times.goldenHourEnd, label: 'Golden Hour End', type: 'golden' },
+		{ time: times.solarNoon, label: 'Solar Noon', type: 'noon' },
+		{ time: times.goldenHour, label: 'Golden Hour Start', type: 'golden' },
+		{ time: times.dusk, label: 'Civil Dusk', type: 'dusk' },
+		{ time: times.nauticalDusk, label: 'Nautical Dusk', type: 'dusk' }
+	];
+	
+	// Add sunrise and sunset
+	timelineEvents.push(
+		{ time: times.sunrise, label: 'Sunrise', type: 'sunrise' },
+		{ time: times.sunset, label: 'Sunset', type: 'sunset' }
+	);
+	
+	// Sort by time
+	timelineEvents.sort((a, b) => a.time - b.time);
+	
+	// Calculate positions for 24-hour timeline
+	// Create the local midnight for the location by adjusting the sunrise date
+	const localSunrise = new Date(times.sunrise.getTime() + (timezoneOffsetHours * 60 * 60 * 1000));
+	const startOfLocalDay = new Date(localSunrise);
+	startOfLocalDay.setHours(0, 0, 0, 0);
+	// Convert back to UTC for comparison with UTC event times
+	const startOfDay = new Date(startOfLocalDay.getTime() - (timezoneOffsetHours * 60 * 60 * 1000));
+	const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+	
+	let timelineHTML = `
+		<div class="timeline-container">
+			<h4 style="margin: 0 0 20px 0; text-align: center; color: #333;">
+				🌅 ${locationName} - ${new Date(dateString).toLocaleDateString()}
+			</h4>
+			
+			<div class="timeline-bar">
+	`;
+	
+	// Add markers to timeline with smart positioning
+	const labelPositions = []; // Track used positions to avoid overlap
+	
+	timelineEvents.forEach((event, index) => {
+		const position = ((event.time - startOfDay) / (endOfDay - startOfDay)) * 100;
+		if (position >= 0 && position <= 100) {
+			// Determine the best level to avoid overlap
+			let level = 1;
+			const minDistance = 8; // Minimum distance between labels in percentage
+			
+			// Check for overlaps with existing labels
+			for (let checkLevel = 1; checkLevel <= 3; checkLevel++) {
+				let hasOverlap = false;
+				for (const existingPos of labelPositions) {
+					if (existingPos.level === checkLevel && 
+						Math.abs(existingPos.position - position) < minDistance) {
+						hasOverlap = true;
+						break;
+					}
+				}
+				if (!hasOverlap) {
+					level = checkLevel;
+					break;
+				}
+			}
+			
+			// Store this position
+			labelPositions.push({ position, level });
+			
+			// Add color coding based on event type
+			let markerColor = '#ffd700';
+			switch (event.type) {
+				case 'sunrise':
+				case 'sunset':
+					markerColor = '#ff6b35';
+					break;
+				case 'golden':
+					markerColor = '#ffb347';
+					break;
+				case 'dawn':
+				case 'dusk':
+					markerColor = '#87ceeb';
+					break;
+				case 'noon':
+					markerColor = '#ffd700';
+					break;
+			}
+			
+			timelineHTML += `
+				<div class="timeline-marker" style="left: ${position}%; background: ${markerColor};"></div>
+				<div class="timeline-label level-${level}" style="left: ${position}%;">
+					<strong>${event.label}</strong><br>
+					${formatTime(event.time)}
+				</div>
+			`;
+		}
+	});
+	
+	// Add current time marker if it's today
+	const today = new Date();
+	if (new Date(dateString).toDateString() === today.toDateString()) {
+		const currentPosition = ((currentTime - startOfDay) / (endOfDay - startOfDay)) * 100;
+		if (currentPosition >= 0 && currentPosition <= 100) {
+			// Find best level for "Now" marker
+			let nowLevel = 1;
+			const minDistance = 8;
+			
+			for (let checkLevel = 1; checkLevel <= 3; checkLevel++) {
+				let hasOverlap = false;
+				for (const existingPos of labelPositions) {
+					if (existingPos.level === checkLevel && 
+						Math.abs(existingPos.position - currentPosition) < minDistance) {
+						hasOverlap = true;
+						break;
+					}
+				}
+				if (!hasOverlap) {
+					nowLevel = checkLevel;
+					break;
+				}
+			}
+			
+			timelineHTML += `
+				<div class="timeline-marker" style="left: ${currentPosition}%; background: red; width: 6px; height: 90px; top: -15px;"></div>
+				<div class="timeline-label level-${nowLevel}" style="left: ${currentPosition}%; color: red; font-weight: bold; border-color: red;">
+					<strong>Now</strong><br>
+					${formatTime(currentTime)}
+				</div>
+			`;
+		}
+	}
+	
+	timelineHTML += `
+			</div>
+			
+			<div class="timeline-info">
+				<div class="info-card">
+					<h5 style="margin: 0 0 8px 0; color: #ff6b35;">🌅 Sunrise</h5>
+					<div>${formatTime(times.sunrise)}</div>
+				</div>
+				
+				<div class="info-card">
+					<h5 style="margin: 0 0 8px 0; color: #ffb347;">✨ Golden Hour</h5>
+					<div>Morning: ${formatTime(times.sunrise)} - ${formatTime(times.goldenHourEnd)}</div>
+					<div>Evening: ${formatTime(times.goldenHour)} - ${formatTime(times.sunset)}</div>
+				</div>
+				
+				<div class="info-card">
+					<h5 style="margin: 0 0 8px 0; color: #87ceeb;">🌅 Blue Hour</h5>
+					<div>Morning: ${formatTime(times.dawn)} - ${formatTime(times.sunrise)}</div>
+					<div>Evening: ${formatTime(times.sunset)} - ${formatTime(times.dusk)}</div>
+				</div>
+				
+				<div class="info-card">
+					<h5 style="margin: 0 0 8px 0; color: #ff6b35;">🌇 Sunset</h5>
+					<div>${formatTime(times.sunset)}</div>
+				</div>
+				
+				<div class="info-card">
+					<h5 style="margin: 0 0 8px 0; color: #ffd700;">☀️ Day Duration</h5>
+					<div>${dayDuration}</div>
+				</div>
+				
+				<div class="info-card">
+					<h5 style="margin: 0 0 8px 0; color: #4169e1;">🌙 Night Duration</h5>
+					<div>${nightDuration}</div>
+				</div>
+			</div>
+		</div>
+	`;
+	
+	daylightTimeline.innerHTML = timelineHTML;
+	daylightTimeline.style.display = 'block';
 }
