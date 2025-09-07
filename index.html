@@ -3,14 +3,14 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Online JPG Metadata Viewer | EXIF Map & Privacy</title>
+		<title>Online JPG Metadata Viewer & Instagram Panorama Splitter</title>
 		<meta
 			name="description"
-			content="View and map JPG EXIF metadata instantly in your browser. No uploads, full privacy. Drag and drop or select a photo to see its metadata and location."
+			content="View JPG EXIF metadata and split panoramic photos for Instagram. No uploads, full privacy. Drag and drop to see metadata, location, and create Instagram-ready carousel posts."
 		/>
 		<meta
 			name="keywords"
-			content="EXIF, JPG, metadata, photo, privacy, map, GPS, online viewer, browser"
+			content="EXIF, JPG, metadata, photo, privacy, map, GPS, online viewer, browser, panorama, Instagram, carousel, split, social media"
 		/>
 
 		<!-- PWA Icons -->
@@ -348,6 +348,66 @@
 				border: 1px solid #ccc;
 				display: none;
 			}
+			
+			/* Panorama splitter modal styles */
+			@media (max-width: 768px) {
+				#pano-splitter-modal .modal-content {
+					margin: 20px;
+					max-width: calc(100% - 40px);
+					max-height: calc(100% - 40px);
+				}
+				
+				#splitter-content > div {
+					flex-direction: column !important;
+				}
+				
+				#splitter-content > div > div {
+					min-width: auto !important;
+				}
+			}
+			
+			.slice-item:hover {
+				transform: scale(1.05);
+				transition: transform 0.2s ease;
+			}
+			
+			/* Aspect ratio support with fallback */
+			.slice-aspect-container {
+				width: 100%;
+				position: relative;
+				overflow: hidden;
+				border-radius: 4px;
+			}
+			
+			.slice-aspect-container::before {
+				content: "";
+				display: block;
+				padding-top: 125%; /* 5/4 = 1.25 = 125% for 4:5 aspect ratio */
+			}
+			
+			.slice-aspect-container img {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+			
+			/* Modern browsers with aspect-ratio support */
+			@supports (aspect-ratio: 4/5) {
+				.slice-aspect-container {
+					aspect-ratio: 4/5;
+				}
+				
+				.slice-aspect-container::before {
+					display: none;
+				}
+				
+				.slice-aspect-container img {
+					position: static;
+				}
+			}
 		</style>
 	</head>
 	<body>
@@ -364,7 +424,7 @@
 				color: #333;
 			"
 		>
-			<strong>Privacy Notice:</strong> All processing is done entirely in
+			<strong>Privacy Notice:</strong> All metadata viewing and panorama processing is done entirely in
 			your browser. Your photos are never uploaded to any server.
 		</div>
 		<!-- Main heading -->
@@ -376,7 +436,7 @@
 				font-size: 2em;
 			"
 		>
-			Online JPG EXIF Metadata Viewer
+			Online JPG EXIF Metadata Viewer & Panorama Splitter
 		</h1>
 		<!-- Drag-and-drop area for JPG files -->
 		<div id="drop-area">Drop JPG file here</div>
@@ -398,6 +458,89 @@
 			id="image-preview"
 			style="width: 80%; margin: 20px auto; text-align: center"
 		></div>
+		
+		<!-- Panorama splitter button area -->
+		<div
+			id="splitter-button-area"
+			style="width: 80%; margin: 10px auto; text-align: center; display: none;"
+		>
+			<button
+				id="split-panorama-btn"
+				style="
+					background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+					color: white;
+					border: none;
+					padding: 12px 24px;
+					border-radius: 8px;
+					font-size: 16px;
+					font-weight: 600;
+					cursor: pointer;
+					box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+					transition: all 0.3s ease;
+					margin: 10px;
+				"
+				onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(102, 126, 234, 0.4)'"
+				onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.3)'"
+			>
+				📱 Split for Instagram
+			</button>
+		</div>
+		
+		<!-- Panorama splitter modal -->
+		<div id="pano-splitter-modal" style="display: none;">
+			<div class="modal-overlay" style="
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.7);
+				z-index: 1000;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			">
+				<div class="modal-content" style="
+					background: white;
+					border-radius: 12px;
+					padding: 24px;
+					max-width: 90%;
+					max-height: 90%;
+					overflow-y: auto;
+					position: relative;
+					box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+				">
+					<button id="close-modal" style="
+						position: absolute;
+						top: 12px;
+						right: 12px;
+						background: none;
+						border: none;
+						font-size: 24px;
+						cursor: pointer;
+						color: #666;
+						width: 32px;
+						height: 32px;
+						border-radius: 50%;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						transition: background 0.2s;
+					"
+					onmouseover="this.style.background='#f0f0f0'"
+					onmouseout="this.style.background='none'"
+					>&times;</button>
+					
+					<h2 style="margin: 0 0 16px 0; color: #333;">Instagram Panorama Splitter</h2>
+					<p style="margin: 0 0 24px 0; color: #666;">Split your panoramic photo into Instagram-friendly carousel posts</p>
+					
+					<div id="splitter-content">
+						<!-- Content will be populated by JavaScript -->
+					</div>
+				</div>
+			</div>
+		</div>
+		
 		<!-- Metadata table area -->
 		<div id="metadata"></div>
 		<!-- Map area for GPS coordinates -->
@@ -641,6 +784,8 @@
 		</footer>
 		<script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+		<script src="./js/jszip.min.js"></script>
+		<script src="./js/FileSaver.min.js"></script>
 		<script>
 			// Get references to DOM elements
 			const dropArea = document.getElementById("drop-area");
@@ -648,12 +793,519 @@
 			const mapDiv = document.getElementById("map");
 			const imagePreviewDiv = document.getElementById("image-preview");
 			const filePicker = document.getElementById("file-picker");
+			const splitterButtonArea = document.getElementById("splitter-button-area");
+			const splitPanoramaBtn = document.getElementById("split-panorama-btn");
+			const panoSplitterModal = document.getElementById("pano-splitter-modal");
+			const closeModalBtn = document.getElementById("close-modal");
+			const splitterContent = document.getElementById("splitter-content");
 
 			// Global variable to track the current map instance
 			let currentMap = null;
 
 			// Global variable to track the current map button container
 			let currentButtonContainer = null;
+			
+			// Global variables for panorama splitter
+			let currentImageFile = null;
+			let originalImage = null;
+			let slicedImages = [];
+			let fullViewImage = null;
+			
+			// Panorama splitter configuration
+			const aspectRatio = 4/5; // Instagram 4:5 aspect ratio
+			const standardWidth = 1080;
+			const standardHeight = Math.round(standardWidth / aspectRatio); // 1350
+			const minSlices = 2;
+
+			// Panorama splitter functions
+			function isPanorama(width, height) {
+				return width > height && (width / height) >= 1.5;
+			}
+			
+			function showSplitterButton() {
+				splitterButtonArea.style.display = 'block';
+			}
+			
+			function hideSplitterButton() {
+				splitterButtonArea.style.display = 'none';
+			}
+			
+			function openSplitterModal() {
+				if (!currentImageFile) return;
+				
+				panoSplitterModal.style.display = 'block';
+				document.body.style.overflow = 'hidden';
+				
+				// Initialize the splitter interface
+				initializeSplitterInterface();
+			}
+			
+			function closeSplitterModal() {
+				panoSplitterModal.style.display = 'none';
+				document.body.style.overflow = 'auto';
+				
+				// Reset splitter state
+				originalImage = null;
+				slicedImages = [];
+				fullViewImage = null;
+			}
+			
+			function initializeSplitterInterface() {
+				splitterContent.innerHTML = `
+					<div style="display: flex; gap: 24px; flex-wrap: wrap;">
+						<div style="flex: 1; min-width: 300px;">
+							<h3 style="margin: 0 0 12px 0; color: #333;">Preview</h3>
+							<div style="border: 2px dashed #ddd; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 16px;">
+								<img id="splitter-preview" src="" alt="Image preview" style="max-width: 100%; max-height: 300px; border-radius: 4px;">
+							</div>
+							<div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+								<h4 style="margin: 0 0 8px 0; color: #333;">Image Details</h4>
+								<p style="margin: 4px 0; color: #666;">Original Size: <span id="original-size">-</span></p>
+								<p style="margin: 4px 0; color: #666;">Scaled Size: <span id="scaled-size">-</span></p>
+								<p style="margin: 4px 0; color: #666;">Number of Slices: <span id="slice-count">-</span></p>
+								<p style="margin: 4px 0; color: #666;">Slice Resolution: <span id="slice-resolution">-</span></p>
+							</div>
+							<div style="margin-bottom: 16px;">
+								<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+									<input type="checkbox" id="high-res-toggle" checked style="width: 16px; height: 16px;">
+									<span style="color: #333; font-weight: 500;">High Resolution Mode</span>
+								</label>
+								<p style="margin: 4px 0 0 24px; color: #666; font-size: 14px;">Uses maximum possible resolution from your image</p>
+							</div>
+							<div style="display: flex; gap: 12px;">
+								<button id="process-btn" style="
+									flex: 1;
+									background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+									color: white;
+									border: none;
+									padding: 12px 16px;
+									border-radius: 6px;
+									font-weight: 600;
+									cursor: pointer;
+									transition: all 0.2s;
+								">Generate Slices</button>
+								<button id="reset-splitter-btn" style="
+									background: #f8f9fa;
+									color: #666;
+									border: 1px solid #ddd;
+									padding: 12px 16px;
+									border-radius: 6px;
+									cursor: pointer;
+									transition: all 0.2s;
+								">Reset</button>
+							</div>
+						</div>
+						<div style="flex: 1; min-width: 300px;">
+							<div id="result-container" style="display: none;">
+								<h3 style="margin: 0 0 12px 0; color: #333;">Sliced Images</h3>
+								<div id="slices-preview" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-bottom: 16px;"></div>
+								<button id="download-btn" style="
+									width: 100%;
+									background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+									color: white;
+									border: none;
+									padding: 12px 16px;
+									border-radius: 6px;
+									font-weight: 600;
+									cursor: pointer;
+									transition: all 0.2s;
+								">Download All Slices as ZIP</button>
+							</div>
+						</div>
+					</div>
+				`;
+				
+				// Setup event listeners for the splitter interface
+				setupSplitterEventListeners();
+				
+				// Load the current image
+				loadImageForSplitting();
+			}
+			
+			function setupSplitterEventListeners() {
+				const highResToggle = document.getElementById('high-res-toggle');
+				const processBtn = document.getElementById('process-btn');
+				const resetBtn = document.getElementById('reset-splitter-btn');
+				const downloadBtn = document.getElementById('download-btn');
+				
+				highResToggle.addEventListener('change', () => {
+					if (originalImage) {
+						updateImageDetails();
+					}
+				});
+				
+				processBtn.addEventListener('click', () => {
+					processImageForSlicing();
+				});
+				
+				resetBtn.addEventListener('click', () => {
+					resetSplitterInterface();
+				});
+				
+				downloadBtn.addEventListener('click', () => {
+					downloadZip();
+				});
+			}
+			
+			function loadImageForSplitting() {
+				if (!currentImageFile) return;
+				
+				const reader = new FileReader();
+				reader.onload = (e) => {
+					const img = new Image();
+					img.onload = () => {
+						originalImage = {
+							element: img,
+							width: img.width,
+							height: img.height,
+							src: e.target.result
+						};
+						
+						// Update preview
+						const previewImg = document.getElementById('splitter-preview');
+						previewImg.src = e.target.result;
+						
+						// Update image details
+						updateImageDetails();
+					};
+					img.src = e.target.result;
+				};
+				reader.readAsDataURL(currentImageFile);
+			}
+			
+			function calculateOptimalScaling(originalWidth, originalHeight, highResMode) {
+				// Default to standard resolution
+				let sliceWidth = standardWidth;
+				let sliceHeight = standardHeight;
+				
+				// For high-res mode: calculate the maximum possible slice size while maintaining aspect ratio
+				if (highResMode) {
+					// Calculate maximum height based on original image height
+					sliceHeight = originalHeight;
+					// Calculate corresponding width based on 4:5 aspect ratio
+					sliceWidth = Math.round(sliceHeight * aspectRatio);
+				}
+				
+				// Initial scaling based on height
+				const scaleFactor = sliceHeight / originalHeight;
+				const baseScaledWidth = Math.round(originalWidth * scaleFactor);
+				
+				// Calculate how many full slices we can get
+				const fullSlices = Math.floor(baseScaledWidth / sliceWidth);
+				
+				// Calculate the remaining width after using full slices
+				const remainingWidth = baseScaledWidth - (fullSlices * sliceWidth);
+				
+				let finalSliceCount, finalScaledWidth, finalScaledHeight;
+				
+				// Ensure a minimum of 2 slices
+				if (fullSlices < minSlices) {
+					finalSliceCount = minSlices;
+					finalScaledWidth = minSlices * sliceWidth;
+					// Calculate height based on maintaining aspect ratio
+					finalScaledHeight = Math.round((finalScaledWidth / originalWidth) * originalHeight);
+				}
+				// If remaining width is more than half a slice, add another slice
+				else if (remainingWidth > (sliceWidth / 2)) {
+					finalSliceCount = fullSlices + 1;
+					finalScaledWidth = finalSliceCount * sliceWidth;
+					// Adjust the scale factor to fit exactly the number of slices
+					const adjustedScaleFactor = finalScaledWidth / originalWidth;
+					finalScaledHeight = Math.round(originalHeight * adjustedScaleFactor);
+				} 
+				// Otherwise use the original number of slices
+				else {
+					finalSliceCount = fullSlices;
+					finalScaledWidth = finalSliceCount * sliceWidth;
+					finalScaledHeight = sliceHeight;
+				}
+				
+				return {
+					scaledWidth: finalScaledWidth,
+					scaledHeight: finalScaledHeight,
+					sliceCount: finalSliceCount,
+					sliceWidth: sliceWidth,
+					sliceHeight: sliceHeight
+				};
+			}
+			
+			function updateImageDetails() {
+				if (!originalImage) return;
+				
+				const highResToggle = document.getElementById('high-res-toggle');
+				const isHighResMode = highResToggle.checked;
+				const { scaledWidth, scaledHeight, sliceCount, sliceWidth, sliceHeight } = calculateOptimalScaling(
+					originalImage.width, 
+					originalImage.height, 
+					isHighResMode
+				);
+				
+				// Update image details
+				document.getElementById('original-size').textContent = `${originalImage.width}px × ${originalImage.height}px`;
+				document.getElementById('scaled-size').textContent = `${scaledWidth}px × ${scaledHeight}px`;
+				document.getElementById('slice-count').textContent = sliceCount;
+				document.getElementById('slice-resolution').textContent = `${sliceWidth}px × ${sliceHeight}px`;
+			}
+			
+			function processImageForSlicing() {
+				if (!originalImage) return;
+				
+				const highResToggle = document.getElementById('high-res-toggle');
+				const isHighResMode = highResToggle.checked;
+				const canvas = document.createElement('canvas');
+				const ctx = canvas.getContext('2d');
+				
+				// Calculate optimal scaling and slicing
+				const { scaledWidth, scaledHeight, sliceCount, sliceWidth, sliceHeight } = calculateOptimalScaling(
+					originalImage.width, 
+					originalImage.height,
+					isHighResMode
+				);
+				
+				// Set canvas dimensions
+				canvas.width = scaledWidth;
+				canvas.height = scaledHeight;
+				
+				// Draw scaled image
+				ctx.drawImage(originalImage.element, 0, 0, scaledWidth, scaledHeight);
+				
+				slicedImages = [];
+				
+				// Create each slice
+				for (let i = 0; i < sliceCount; i++) {
+					const sliceCanvas = document.createElement('canvas');
+					const sliceCtx = sliceCanvas.getContext('2d');
+					
+					sliceCanvas.width = sliceWidth;
+					sliceCanvas.height = sliceHeight;
+					
+					// Draw slice portion
+					sliceCtx.drawImage(
+						canvas, 
+						i * sliceWidth, 0, sliceWidth, scaledHeight,
+						0, 0, sliceWidth, sliceHeight
+					);
+					
+					// Convert to data URL
+					const dataURL = sliceCanvas.toDataURL('image/jpeg', 0.95);
+					
+					slicedImages.push({
+						dataURL,
+						number: i + 1,
+						width: sliceWidth,
+						height: sliceHeight
+					});
+				}
+				
+				// Create the full panorama view on white background
+				createFullViewImage(sliceWidth, sliceHeight);
+				
+				// Show results
+				displaySplitterResults();
+			}
+			
+			function createFullViewImage(sliceWidth, sliceHeight) {
+				if (!originalImage) return;
+				
+				// Create a canvas with the same aspect ratio as the slices
+				const fullCanvas = document.createElement('canvas');
+				const fullCtx = fullCanvas.getContext('2d');
+				
+				// Use the same dimensions as the slices for consistency
+				fullCanvas.width = sliceWidth;
+				fullCanvas.height = sliceHeight;
+				
+				// Fill with white background
+				fullCtx.fillStyle = '#FFFFFF';
+				fullCtx.fillRect(0, 0, sliceWidth, sliceHeight);
+				
+				// Calculate the scale for the panorama to fit within the frame with margins
+				const margin = Math.round(sliceWidth * 0.08); // 8% margin
+				const availableWidth = sliceWidth - (margin * 2);
+				const availableHeight = sliceHeight - (margin * 2);
+				
+				// Determine which dimension constrains the scaling
+				const originalAspectRatio = originalImage.width / originalImage.height;
+				let scaledPanoWidth, scaledPanoHeight;
+				
+				if (originalAspectRatio > availableWidth / availableHeight) {
+					// Width is the constraining factor
+					scaledPanoWidth = availableWidth;
+					scaledPanoHeight = scaledPanoWidth / originalAspectRatio;
+				} else {
+					// Height is the constraining factor
+					scaledPanoHeight = availableHeight;
+					scaledPanoWidth = scaledPanoHeight * originalAspectRatio;
+				}
+				
+				// Calculate position to center the image
+				const x = Math.round((sliceWidth - scaledPanoWidth) / 2);
+				const y = Math.round((sliceHeight - scaledPanoHeight) / 2);
+				
+				// Draw the scaled panorama centered on the white canvas
+				fullCtx.drawImage(
+					originalImage.element,
+					0, 0, originalImage.width, originalImage.height,
+					x, y, scaledPanoWidth, scaledPanoHeight
+				);
+				
+				// Add a subtle border
+				fullCtx.strokeStyle = '#EEEEEE';
+				fullCtx.lineWidth = 1;
+				fullCtx.strokeRect(x - 1, y - 1, scaledPanoWidth + 2, scaledPanoHeight + 2);
+				
+				// Convert to data URL
+				fullViewImage = {
+					dataURL: fullCanvas.toDataURL('image/jpeg', 0.95),
+					width: sliceWidth,
+					height: sliceHeight
+				};
+			}
+			
+			function displaySplitterResults() {
+				const slicesPreview = document.getElementById('slices-preview');
+				const resultContainer = document.getElementById('result-container');
+				
+				slicesPreview.innerHTML = '';
+				
+				// Add the full view as the first item with special styling
+				if (fullViewImage) {
+					const fullViewItem = document.createElement('div');
+					fullViewItem.style.cssText = `
+						border: 2px solid #667eea;
+						border-radius: 6px;
+						overflow: hidden;
+						background: white;
+						text-align: center;
+						padding: 8px;
+					`;
+					
+					const imgContainer = document.createElement('div');
+					imgContainer.className = 'slice-aspect-container';
+					
+					const img = document.createElement('img');
+					img.src = fullViewImage.dataURL;
+					img.alt = 'Full Panorama View';
+					
+					const label = document.createElement('div');
+					label.textContent = 'Full View';
+					label.style.cssText = 'font-size: 12px; font-weight: 600; color: #667eea; margin-top: 4px;';
+					
+					imgContainer.appendChild(img);
+					fullViewItem.appendChild(imgContainer);
+					fullViewItem.appendChild(label);
+					slicesPreview.appendChild(fullViewItem);
+				}
+				
+				// Add all the regular slices
+				slicedImages.forEach(slice => {
+					const sliceItem = document.createElement('div');
+					sliceItem.style.cssText = `
+						border: 1px solid #ddd;
+						border-radius: 6px;
+						overflow: hidden;
+						background: white;
+						text-align: center;
+						padding: 8px;
+						transition: transform 0.2s;
+					`;
+					sliceItem.onmouseover = () => sliceItem.style.transform = 'scale(1.05)';
+					sliceItem.onmouseout = () => sliceItem.style.transform = 'scale(1)';
+					
+					const imgContainer = document.createElement('div');
+					imgContainer.className = 'slice-aspect-container';
+					
+					const img = document.createElement('img');
+					img.src = slice.dataURL;
+					img.alt = `Slice ${slice.number}`;
+					
+					const number = document.createElement('div');
+					number.textContent = slice.number;
+					number.style.cssText = 'font-size: 14px; font-weight: 600; color: #333; margin-top: 4px;';
+					
+					imgContainer.appendChild(img);
+					sliceItem.appendChild(imgContainer);
+					sliceItem.appendChild(number);
+					slicesPreview.appendChild(sliceItem);
+				});
+				
+				resultContainer.style.display = 'block';
+			}
+			
+			function resetSplitterInterface() {
+				const resultContainer = document.getElementById('result-container');
+				resultContainer.style.display = 'none';
+				
+				// Clear image data
+				originalImage = null;
+				slicedImages = [];
+				fullViewImage = null;
+				
+				// Reload the image
+				loadImageForSplitting();
+			}
+			
+			async function downloadZip() {
+				if (slicedImages.length === 0) return;
+				
+				const zip = new JSZip();
+				const highResToggle = document.getElementById('high-res-toggle');
+				const isHighRes = highResToggle.checked;
+				const folderName = isHighRes ? 'high_res_slices' : 'standard_slices';
+				
+				// Add the full view as slice_00.jpg if available
+				if (fullViewImage) {
+					const imageData = fullViewImage.dataURL.split(',')[1];
+					zip.file(`${folderName}/slice_00_full_view.jpg`, imageData, { base64: true });
+				}
+				
+				// Add each slice to the zip
+				slicedImages.forEach(slice => {
+					// Convert data URL to blob
+					const imageData = slice.dataURL.split(',')[1];
+					zip.file(`${folderName}/slice_${String(slice.number).padStart(2, '0')}.jpg`, imageData, { base64: true });
+				});
+				
+				// Add a readme file explaining the full view
+				const currentDate = new Date().toISOString().split('T')[0];
+				const readmeContent = 
+`Instagram Panorama Slicer - Integrated with EXIF Metadata Viewer
+
+This package contains:
+- slice_00_full_view.jpg: A complete view of your panorama that fits Instagram's 4:5 aspect ratio
+- slice_01.jpg to slice_${String(slicedImages.length).padStart(2, '0')}.jpg: Individual slices of your panorama
+
+For best results on Instagram:
+1. Make an instagram carousel post adding slice_01.jpg through slice_${String(slicedImages.length).padStart(2, '0')}.jpg in order
+2. Add slice_00_full_view.jpg either as the first or last image in the carousel
+
+Generated on: ${currentDate}
+`;
+				
+				zip.file('README.txt', readmeContent);
+				
+				// Generate zip file
+				const content = await zip.generateAsync({ type: 'blob' });
+				saveAs(content, 'instagram_carousel_slices.zip');
+			}
+			
+			// Event listeners for panorama splitter
+			splitPanoramaBtn.addEventListener('click', openSplitterModal);
+			closeModalBtn.addEventListener('click', closeSplitterModal);
+			
+			// Close modal when clicking outside
+			panoSplitterModal.addEventListener('click', (e) => {
+				if (e.target === panoSplitterModal) {
+					closeSplitterModal();
+				}
+			});
+			
+			// Close modal with escape key
+			document.addEventListener('keydown', (e) => {
+				if (e.key === 'Escape' && panoSplitterModal.style.display === 'block') {
+					closeSplitterModal();
+				}
+			});
 
 			// Pretty print EXIF values with user-friendly names and formatting
 			function getPrettyExifInfo(key, value, originalValue = null) {
@@ -953,6 +1605,9 @@
 
 			// Handle file selection or drop
 			function handleFile(file) {
+				// Store the current file for panorama splitter
+				currentImageFile = file;
+				
 				// Validate file type
 				if (!file || file.type !== "image/jpeg") {
 					metadataDiv.textContent = "Please select a JPG file.";
@@ -963,10 +1618,24 @@
 					}
 					mapDiv.style.display = "none";
 					imagePreviewDiv.innerHTML = "";
+					hideSplitterButton();
+					currentImageFile = null;
 					return;
 				}
-				// Display image preview
+				
+				// Display image preview and check for panorama
 				const imgUrl = URL.createObjectURL(file);
+				const img = new Image();
+				img.onload = function() {
+					// Check if it's a panoramic image
+					if (isPanorama(img.width, img.height)) {
+						showSplitterButton();
+					} else {
+						hideSplitterButton();
+					}
+				};
+				img.src = imgUrl;
+				
 				imagePreviewDiv.innerHTML = `<img src="${imgUrl}" alt="Preview of dropped JPG file" style="max-width:100%;max-height:400px;border-radius:10px;border:1px solid #ccc;box-shadow:0 2px 8px #ccc;" />`;
 				const reader = new FileReader();
 				reader.onload = function (event) {
