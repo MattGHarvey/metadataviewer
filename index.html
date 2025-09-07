@@ -906,6 +906,7 @@
 			
 			// Global variables for EXIF overlay
 			let currentExifData = null;
+			let selectedAspectRatio = null;
 			let overlayPreviewCanvas = null;
 			
 			// Panorama splitter configuration
@@ -947,14 +948,15 @@
 							<div style="margin-bottom: 20px;">
 								<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Font Family</label>
 								<select id="font-family" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-									<option value="Inter">Inter (Modern Sans)</option>
-									<option value="Roboto">Roboto (Clean Sans)</option>
-									<option value="Open Sans">Open Sans (Friendly Sans)</option>
-									<option value="Lato">Lato (Humanist Sans)</option>
-									<option value="Montserrat">Montserrat (Geometric Sans)</option>
-									<option value="Nunito">Nunito (Rounded Sans)</option>
-									<option value="Poppins">Poppins (Stylish Sans)</option>
-									<option value="Playfair Display">Playfair Display (Elegant Serif)</option>
+									<option value="Roboto, sans-serif" selected>Roboto (Clean Sans)</option>
+									<option value="Inter, sans-serif">Inter (Modern Sans)</option>
+									<option value="'Open Sans', sans-serif">Open Sans (Friendly Sans)</option>
+									<option value="Lato, sans-serif">Lato (Humanist Sans)</option>
+									<option value="Montserrat, sans-serif">Montserrat (Geometric Sans)</option>
+									<option value="Nunito, sans-serif">Nunito (Rounded Sans)</option>
+									<option value="Poppins, sans-serif">Poppins (Stylish Sans)</option>
+									<option value="'Playfair Display', serif">'Playfair Display' (Elegant Serif)</option>
+									<option value="Arial, sans-serif">Arial (System Default)</option>
 								</select>
 							</div>
 							
@@ -963,6 +965,17 @@
 								<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Border Width</label>
 								<input type="range" id="border-width" min="20" max="120" value="40" style="width: 100%; margin-bottom: 8px;">
 								<span id="border-width-value" style="font-size: 14px; color: #666;">40px</span>
+								
+								<!-- Instagram Border Presets -->
+								<div style="margin-top: 12px;">
+									<label style="display: block; margin-bottom: 6px; font-size: 14px; color: #666;">Instagram Presets</label>
+									<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+										<button id="preset-thin" style="padding: 6px 8px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 11px; text-align: center;">Thin<br><span style="font-size: 10px; color: #666;">25px</span></button>
+										<button id="preset-medium" style="padding: 6px 8px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 11px; text-align: center;">Medium<br><span style="font-size: 10px; color: #666;">50px</span></button>
+										<button id="preset-thick" style="padding: 6px 8px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 11px; text-align: center;">Thick<br><span style="font-size: 10px; color: #666;">80px</span></button>
+										<button id="preset-polaroid" style="padding: 6px 8px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-size: 11px; text-align: center;">Polaroid<br><span style="font-size: 10px; color: #666;">100px</span></button>
+									</div>
+								</div>
 							</div>
 							
 							<div style="margin-bottom: 20px;">
@@ -972,6 +985,34 @@
 									<button id="preset-white" style="padding: 8px 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">White</button>
 									<button id="preset-black" style="padding: 8px 12px; background: #000; color: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">Black</button>
 									<button id="preset-cream" style="padding: 8px 12px; background: #f5f5dc; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">Cream</button>
+								</div>
+							</div>
+							
+							<!-- Instagram Aspect Ratio Presets -->
+							<div style="margin-bottom: 20px;">
+								<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Instagram Aspect Ratios</label>
+								<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px;">
+									<button id="aspect-square" style="padding: 10px 12px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px; text-align: center;">
+										<div style="font-weight: 600;">Square</div>
+										<div style="font-size: 10px; color: #666;">1:1 • Feed Posts</div>
+									</button>
+									<button id="aspect-portrait" style="padding: 10px 12px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px; text-align: center;">
+										<div style="font-weight: 600;">Portrait</div>
+										<div style="font-size: 10px; color: #666;">4:5 • Feed Posts</div>
+									</button>
+								</div>
+								<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+									<button id="aspect-story" style="padding: 10px 12px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px; text-align: center;">
+										<div style="font-weight: 600;">Story</div>
+										<div style="font-size: 10px; color: #666;">9:16 • Stories</div>
+									</button>
+									<button id="aspect-landscape" style="padding: 10px 12px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px; text-align: center;">
+										<div style="font-weight: 600;">Landscape</div>
+										<div style="font-size: 10px; color: #666;">16:9 • Reels</div>
+									</button>
+								</div>
+								<div style="font-size: 11px; color: #666; margin-top: 8px; font-style: italic;">
+									Aspect ratio will be applied when you upload an image
 								</div>
 							</div>
 							
@@ -1015,6 +1056,29 @@
 							
 							<!-- Action Buttons -->
 							<div style="display: flex; gap: 12px; margin-top: 20px;">
+								<button id="reset-exif-overlay" style="
+									flex: 1;
+									background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+									color: white;
+									border: none;
+									padding: 12px 16px;
+									border-radius: 6px;
+									font-weight: 600;
+									cursor: pointer;
+									transition: all 0.2s;
+								">Reset All</button>
+								<button id="debug-slider" style="
+									flex: 0.5;
+									background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+									color: white;
+									border: none;
+									padding: 12px 16px;
+									border-radius: 6px;
+									font-weight: 600;
+									cursor: pointer;
+									transition: all 0.2s;
+									font-size: 12px;
+								">Debug</button>
 								<button id="preview-exif-overlay" style="
 									flex: 1;
 									background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
@@ -1064,32 +1128,76 @@
 				// Populate EXIF checkboxes
 				populateEssentialExifCheckboxes();
 				
-				// Create initial preview after a small delay to ensure DOM is ready
-				setTimeout(() => {
-					updateExifOverlayPreview();
-				}, 100);
+				// Set initial font family value and trigger update
+				const fontFamilySelect = document.getElementById('font-family');
+				fontFamilySelect.value = 'Roboto, sans-serif';
+				console.log('🔄 Initial font family set to:', fontFamilySelect.value);
+				
+				// Wait for fonts to load before initial preview
+				if (document.fonts && document.fonts.ready) {
+					document.fonts.ready.then(() => {
+						console.log('🎨 Fonts loaded, creating initial preview');
+						setTimeout(() => {
+							updateExifOverlayPreview();
+						}, 100);
+					});
+				} else {
+					// Fallback for browsers without Font Loading API
+					console.log('🎨 Font Loading API not available, using fallback delay');
+					setTimeout(() => {
+						updateExifOverlayPreview();
+					}, 500); // Longer delay to allow fonts to load
+				}
 			}
 			
+			let exifEventListenersSetup = false;
+			
 			function setupExifOverlayEventListeners() {
+				// Prevent duplicate event listener setup
+				if (exifEventListenersSetup) {
+					console.log('📋 Event listeners already setup, skipping');
+					return;
+				}
+				exifEventListenersSetup = true;
+				console.log('🚀 Setting up EXIF overlay event listeners');
+				
 				// Range inputs with live value display
 				const borderWidth = document.getElementById('border-width');
 				const borderWidthValue = document.getElementById('border-width-value');
 				const fontSize = document.getElementById('font-size');
 				const fontSizeValue = document.getElementById('font-size-value');
 				
+				console.log('🔍 Font size slider element found:', fontSize ? 'YES' : 'NO');
+				console.log('🔍 Font size value element found:', fontSizeValue ? 'YES' : 'NO');
+				
 				borderWidth.addEventListener('input', () => {
+					console.log('📏 Border width changed to:', borderWidth.value);
 					borderWidthValue.textContent = borderWidth.value + 'px';
 					updateExifOverlayPreview();
 				});
 				
 				fontSize.addEventListener('input', () => {
+					console.log('🔤 Font size changed to:', fontSize.value);
 					fontSizeValue.textContent = fontSize.value + 'px';
 					updateExifOverlayPreview();
 				});
 				
+				console.log('✅ Font size event listener attached successfully');
+				
 				// Color and selection inputs
-				['font-family', 'border-color', 'text-color', 'separator-char'].forEach(id => {
+				['border-color', 'text-color', 'separator-char'].forEach(id => {
 					document.getElementById(id).addEventListener('change', updateExifOverlayPreview);
+				});
+				
+				// Font family needs special handling for immediate updates
+				const fontFamilySelect = document.getElementById('font-family');
+				fontFamilySelect.addEventListener('change', () => {
+					console.log('🎨 Font family changed to:', fontFamilySelect.value);
+					updateExifOverlayPreview();
+				});
+				fontFamilySelect.addEventListener('input', () => {
+					console.log('🎨 Font family input event:', fontFamilySelect.value);
+					updateExifOverlayPreview();
 				});
 				
 				// Color preset buttons
@@ -1105,6 +1213,64 @@
 				
 				document.getElementById('preset-cream').addEventListener('click', () => {
 					document.getElementById('border-color').value = '#f5f5dc';
+					updateExifOverlayPreview();
+				});
+				
+				// Border size preset buttons
+				document.getElementById('preset-thin').addEventListener('click', () => {
+					const borderWidth = document.getElementById('border-width');
+					const borderWidthValue = document.getElementById('border-width-value');
+					borderWidth.value = '25';
+					borderWidthValue.textContent = '25px';
+					updateExifOverlayPreview();
+				});
+				
+				document.getElementById('preset-medium').addEventListener('click', () => {
+					const borderWidth = document.getElementById('border-width');
+					const borderWidthValue = document.getElementById('border-width-value');
+					borderWidth.value = '50';
+					borderWidthValue.textContent = '50px';
+					updateExifOverlayPreview();
+				});
+				
+				document.getElementById('preset-thick').addEventListener('click', () => {
+					const borderWidth = document.getElementById('border-width');
+					const borderWidthValue = document.getElementById('border-width-value');
+					borderWidth.value = '80';
+					borderWidthValue.textContent = '80px';
+					updateExifOverlayPreview();
+				});
+				
+				document.getElementById('preset-polaroid').addEventListener('click', () => {
+					const borderWidth = document.getElementById('border-width');
+					const borderWidthValue = document.getElementById('border-width-value');
+					borderWidth.value = '100';
+					borderWidthValue.textContent = '100px';
+					updateExifOverlayPreview();
+				});
+				
+				// Aspect ratio preset buttons
+				document.getElementById('aspect-square').addEventListener('click', () => {
+					selectedAspectRatio = 1; // 1:1
+					updateAspectRatioButtons('aspect-square');
+					updateExifOverlayPreview();
+				});
+				
+				document.getElementById('aspect-portrait').addEventListener('click', () => {
+					selectedAspectRatio = 4/5; // 4:5
+					updateAspectRatioButtons('aspect-portrait');
+					updateExifOverlayPreview();
+				});
+				
+				document.getElementById('aspect-story').addEventListener('click', () => {
+					selectedAspectRatio = 9/16; // 9:16
+					updateAspectRatioButtons('aspect-story');
+					updateExifOverlayPreview();
+				});
+				
+				document.getElementById('aspect-landscape').addEventListener('click', () => {
+					selectedAspectRatio = 16/9; // 16:9
+					updateAspectRatioButtons('aspect-landscape');
 					updateExifOverlayPreview();
 				});
 				
@@ -1124,8 +1290,137 @@
 				});
 				
 				// Action buttons
+				document.getElementById('reset-exif-overlay').addEventListener('click', resetExifOverlaySettings);
+				document.getElementById('debug-slider').addEventListener('click', debugSlider);
 				document.getElementById('preview-exif-overlay').addEventListener('click', updateExifOverlayPreview);
 				document.getElementById('download-exif-overlay').addEventListener('click', downloadExifOverlay);
+			}
+			
+			function debugSlider() {
+				console.log('🐛 DEBUG: Starting slider diagnostics');
+				
+				const fontSizeSlider = document.getElementById('font-size');
+				const fontSizeValue = document.getElementById('font-size-value');
+				
+				console.log('🐛 DEBUG: Font size slider element:', fontSizeSlider);
+				console.log('🐛 DEBUG: Font size value element:', fontSizeValue);
+				console.log('🐛 DEBUG: Current slider value:', fontSizeSlider ? fontSizeSlider.value : 'N/A');
+				console.log('🐛 DEBUG: Current value display:', fontSizeValue ? fontSizeValue.textContent : 'N/A');
+				console.log('🐛 DEBUG: Event listeners setup flag:', exifEventListenersSetup);
+				
+				// Try to manually change the slider and see if it triggers
+				if (fontSizeSlider) {
+					console.log('🐛 DEBUG: Manually setting slider to 20');
+					fontSizeSlider.value = '20';
+					console.log('🐛 DEBUG: Triggering input event');
+					fontSizeSlider.dispatchEvent(new Event('input'));
+					console.log('🐛 DEBUG: Value after manual change:', fontSizeSlider.value);
+					console.log('🐛 DEBUG: Display after manual change:', fontSizeValue ? fontSizeValue.textContent : 'N/A');
+				}
+				
+				// Check if event listeners exist
+				console.log('🐛 DEBUG: Checking event listeners on slider...');
+				try {
+					const listeners = getEventListeners ? getEventListeners(fontSizeSlider) : 'getEventListeners not available in this browser';
+					console.log('🐛 DEBUG: Event listeners:', listeners);
+				} catch (e) {
+					console.log('🐛 DEBUG: getEventListeners not available (normal in production)');
+				}
+				
+				// Test different event types
+				console.log('🐛 DEBUG: Testing different event types...');
+				if (fontSizeSlider) {
+					fontSizeSlider.addEventListener('change', () => console.log('🐛 CHANGE event fired!'), { once: true });
+					fontSizeSlider.addEventListener('input', () => console.log('🐛 INPUT event fired!'), { once: true });
+					fontSizeSlider.addEventListener('mousedown', () => console.log('🐛 MOUSEDOWN event fired!'), { once: true });
+					fontSizeSlider.addEventListener('mouseup', () => console.log('🐛 MOUSEUP event fired!'), { once: true });
+					
+					console.log('🐛 DEBUG: Please try manually dragging the slider now and watch the console...');
+				}
+			}
+			
+			function resetExifOverlaySettings() {
+				console.log('🔄 RESET: Starting reset process');
+				
+				// Reset the event listener flag so we can re-setup if needed
+				console.log('🔄 RESET: Resetting event listener flag');
+				exifEventListenersSetup = false;
+				
+				// Reset border settings
+				document.getElementById('border-width').value = '40';
+				document.getElementById('border-width-value').textContent = '40px';
+				document.getElementById('border-color').value = '#ffffff';
+				
+				// Reset text settings
+				const fontSizeSlider = document.getElementById('font-size');
+				const fontSizeValue = document.getElementById('font-size-value');
+				
+				console.log('🔄 RESET: Font size slider element:', fontSizeSlider ? 'FOUND' : 'NOT FOUND');
+				console.log('🔄 RESET: Font size value element:', fontSizeValue ? 'FOUND' : 'NOT FOUND');
+				console.log('🔄 RESET: Current slider value before reset:', fontSizeSlider ? fontSizeSlider.value : 'N/A');
+				
+				fontSizeSlider.value = '16';
+				fontSizeValue.textContent = '16px';
+				
+				console.log('🔄 RESET: Slider value after reset:', fontSizeSlider.value);
+				
+				document.getElementById('text-color').value = '#000000';
+				document.getElementById('font-family').value = 'Roboto, sans-serif';
+				
+				// Reset separator
+				document.getElementById('separator-char').value = ' • ';
+				
+				// Reset aspect ratio
+				selectedAspectRatio = null;
+				updateAspectRatioButtons(null);
+				
+				// Reset checkboxes manually without recreating them
+				const cameraFields = ['Make', 'Model', 'LensModel'];
+				const allFields = ['FNumber', 'ExposureTime', 'ISOSpeedRatings', 'FocalLength', 'Make', 'Model', 'LensModel'];
+				
+				allFields.forEach(field => {
+					const checkbox = document.getElementById(`exif-${field}`);
+					if (checkbox) {
+						// Check photography data by default, uncheck camera/gear data
+						checkbox.checked = !cameraFields.includes(field);
+					}
+				});
+				
+				// Trigger input event manually to ensure slider works
+				console.log('🔄 RESET: Triggering manual input event');
+				fontSizeSlider.dispatchEvent(new Event('input'));
+				
+				// Re-setup event listeners after reset
+				console.log('🔄 RESET: Re-setting up event listeners');
+				setupExifOverlayEventListeners();
+				
+				// Update preview after a small delay
+				setTimeout(() => {
+					console.log('🔄 RESET: Updating preview');
+					updateExifOverlayPreview();
+				}, 50);
+				
+				console.log('🔄 RESET: Reset process completed');
+			}
+			
+			function updateAspectRatioButtons(activeId) {
+				// Reset all buttons
+				['aspect-square', 'aspect-portrait', 'aspect-story', 'aspect-landscape'].forEach(id => {
+					const button = document.getElementById(id);
+					if (button) {
+						button.style.background = '#f8f9fa';
+						button.style.borderColor = '#ddd';
+					}
+				});
+				
+				// Highlight active button if specified
+				if (activeId) {
+					const activeButton = document.getElementById(activeId);
+					if (activeButton) {
+						activeButton.style.background = '#e3f2fd';
+						activeButton.style.borderColor = '#2196f3';
+					}
+				}
 			}
 			
 			function populateEssentialExifCheckboxes() {
@@ -1199,10 +1494,16 @@
 			}
 			
 			function updateExifOverlayPreview() {
+				console.log('🖼️ PREVIEW: Starting preview update');
+				
 				const canvas = document.getElementById('exif-preview-canvas');
 				const noImageMessage = document.getElementById('no-image-message');
 				
+				console.log('🖼️ PREVIEW: Canvas element found:', canvas ? 'YES' : 'NO');
+				console.log('🖼️ PREVIEW: No image message found:', noImageMessage ? 'YES' : 'NO');
+				
 				if (!canvas) {
+					console.log('🖼️ PREVIEW: No canvas found, returning early');
 					return;
 				}
 				
@@ -1211,27 +1512,55 @@
 				canvas.style.display = 'block';
 				
 				const ctx = canvas.getContext('2d');
+				console.log('🖼️ PREVIEW: Canvas context:', ctx ? 'OK' : 'FAILED');
 				
 				// Get current settings
 				const borderWidth = parseInt(document.getElementById('border-width').value);
 				const borderColor = document.getElementById('border-color').value;
 				const fontSize = parseInt(document.getElementById('font-size').value);
 				const textColor = document.getElementById('text-color').value;
-				const fontFamily = document.getElementById('font-family').value;
+				const fontFamilyElement = document.getElementById('font-family');
+				const fontFamily = fontFamilyElement ? fontFamilyElement.value || 'Roboto, sans-serif' : 'Roboto, sans-serif';
+				
+				console.log('🖼️ PREVIEW: Settings:', {
+					borderWidth,
+					borderColor,
+					fontSize,
+					textColor,
+					fontFamily,
+					fontFamilyElement: fontFamilyElement ? 'FOUND' : 'NOT FOUND',
+					actualFontValue: fontFamilyElement ? fontFamilyElement.value : 'N/A'
+				});
+				
+				console.log('🖼️ PREVIEW: Current image file:', currentImageFile ? 'EXISTS' : 'NONE');
 				
 				if (!currentImageFile) {
+					console.log('🖼️ PREVIEW: Creating sample preview');
 					// Show sample preview with placeholder image
 					const sampleWidth = 400;
 					const sampleHeight = 300;
 					const totalWidth = sampleWidth + (borderWidth * 2);
 					const totalHeight = sampleHeight + (borderWidth * 2) + fontSize + 20; // Extra space for text
 					
+					console.log('🖼️ PREVIEW: Sample dimensions:', {
+						sampleWidth,
+						sampleHeight,
+						totalWidth,
+						totalHeight,
+						borderWidth,
+						fontSize
+					});
+					
 					canvas.width = totalWidth;
 					canvas.height = totalHeight;
+					
+					console.log('🖼️ PREVIEW: Canvas size set to:', canvas.width, 'x', canvas.height);
 					
 					// Draw border
 					ctx.fillStyle = borderColor;
 					ctx.fillRect(0, 0, totalWidth, totalHeight);
+					
+					console.log('🖼️ PREVIEW: Border drawn with color:', borderColor);
 					
 					// Draw sample image (gray placeholder)
 					ctx.fillStyle = '#f0f0f0';
@@ -1244,9 +1573,13 @@
 					ctx.textBaseline = 'middle';
 					ctx.fillText('Sample Image Preview', totalWidth / 2, borderWidth + sampleHeight / 2);
 					
+					console.log('🖼️ PREVIEW: Sample image drawn');
+					
 					// Get selected EXIF data and draw it
 					const selectedExifData = getSelectedExifData();
+					console.log('🖼️ PREVIEW: Selected EXIF data:', selectedExifData);
 					drawExifText(ctx, selectedExifData, totalWidth, totalHeight, borderWidth, fontSize, textColor, fontFamily);
+					console.log('🖼️ PREVIEW: EXIF text drawn, preview complete');
 					return;
 				}
 				
@@ -1257,7 +1590,12 @@
 					img.onload = () => {
 						// Calculate canvas size
 						const maxPreviewSize = 400;
-						const imageAspectRatio = img.width / img.height;
+						let imageAspectRatio = img.width / img.height;
+						
+						// Apply selected Instagram aspect ratio if set
+						if (selectedAspectRatio) {
+							imageAspectRatio = selectedAspectRatio;
+						}
 						
 						let previewWidth, previewHeight;
 						if (imageAspectRatio > 1) {
@@ -1279,8 +1617,27 @@
 						ctx.fillStyle = borderColor;
 						ctx.fillRect(0, 0, totalWidth, totalHeight);
 						
-						// Draw image
-						ctx.drawImage(img, borderWidth, borderWidth, previewWidth, previewHeight);
+						// Draw image resized to fit within the aspect ratio (no cropping)
+						const originalAspectRatio = img.width / img.height;
+						const targetAspectRatio = selectedAspectRatio || originalAspectRatio;
+						
+						let drawWidth, drawHeight, drawX, drawY;
+						
+						if (originalAspectRatio > targetAspectRatio) {
+							// Image is wider - fit to width, center vertically
+							drawWidth = previewWidth;
+							drawHeight = previewWidth / originalAspectRatio;
+							drawX = borderWidth;
+							drawY = borderWidth + (previewHeight - drawHeight) / 2;
+						} else {
+							// Image is taller - fit to height, center horizontally
+							drawHeight = previewHeight;
+							drawWidth = previewHeight * originalAspectRatio;
+							drawX = borderWidth + (previewWidth - drawWidth) / 2;
+							drawY = borderWidth;
+						}
+						
+						ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
 						
 						// Get selected EXIF data
 						const selectedExifData = getSelectedExifData();
@@ -1399,10 +1756,26 @@
 			}
 			
 			function drawExifText(ctx, textLines, canvasWidth, canvasHeight, borderWidth, fontSize, textColor, fontFamily) {
-				if (textLines.length === 0) return;
+				console.log('📝 DRAW TEXT: Starting text draw with params:', {
+					textLines,
+					canvasWidth,
+					canvasHeight,
+					borderWidth,
+					fontSize,
+					textColor,
+					fontFamily: fontFamily || 'Roboto, sans-serif' // Show fallback in logs
+				});
+				
+				// Ensure we have a valid font family
+				const safeFontFamily = fontFamily || 'Roboto, sans-serif';
+				
+				if (textLines.length === 0) {
+					console.log('📝 DRAW TEXT: No text lines to draw, returning');
+					return;
+				}
 				
 				ctx.fillStyle = textColor;
-				ctx.font = `${fontSize}px ${fontFamily}`;
+				ctx.font = `${fontSize}px ${safeFontFamily}`;
 				ctx.textAlign = 'center';
 				ctx.textBaseline = 'middle';
 				
@@ -1410,21 +1783,32 @@
 				const imageWidth = canvasWidth - (borderWidth * 2);
 				const imageHeight = canvasHeight - (borderWidth * 2);
 				
+				console.log('📝 DRAW TEXT: Text to draw:', text);
+				console.log('📝 DRAW TEXT: Calculated dimensions:', { imageWidth, imageHeight });
+				
 				// Position text at bottom center, scaled to image width
 				const textX = canvasWidth / 2;
 				const textY = borderWidth + imageHeight + (borderWidth / 2);
 				
+				console.log('📝 DRAW TEXT: Text position:', { textX, textY });
+				
 				// Scale font to fit within image width with some padding
 				const maxTextWidth = imageWidth * 0.95;
 				let currentFontSize = fontSize;
-				ctx.font = `${currentFontSize}px ${fontFamily}`;
+				ctx.font = `${currentFontSize}px ${safeFontFamily}`;
+				
+				console.log('📝 DRAW TEXT: Starting font scaling, maxTextWidth:', maxTextWidth);
 				
 				while (ctx.measureText(text).width > maxTextWidth && currentFontSize > 8) {
 					currentFontSize--;
-					ctx.font = `${currentFontSize}px ${fontFamily}`;
+					ctx.font = `${currentFontSize}px ${safeFontFamily}`;
 				}
 				
+				console.log('📝 DRAW TEXT: Final font size:', currentFontSize);
+				console.log('📝 DRAW TEXT: Text width:', ctx.measureText(text).width);
+				
 				ctx.fillText(text, textX, textY);
+				console.log('📝 DRAW TEXT: Text drawn at position', textX, textY, 'with text:', text);
 			}
 			
 			function downloadExifOverlay() {
@@ -1435,7 +1819,7 @@
 				const borderColor = document.getElementById('border-color').value;
 				const fontSize = parseInt(document.getElementById('font-size').value);
 				const textColor = document.getElementById('text-color').value;
-				const fontFamily = document.getElementById('font-family').value;
+				const fontFamily = document.getElementById('font-family').value || 'Roboto, sans-serif'; // Fallback to Roboto
 				
 				// Create high-resolution canvas
 				const canvas = document.createElement('canvas');
