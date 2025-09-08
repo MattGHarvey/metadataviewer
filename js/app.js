@@ -390,6 +390,11 @@ function setupEventListeners() {
 		}
 	});
 
+	// Click to browse functionality
+	dropArea.addEventListener("click", () => {
+		filePicker.click();
+	});
+
 	// Global drag and drop events for entire page
 	document.addEventListener("dragover", (e) => {
 		e.preventDefault();
