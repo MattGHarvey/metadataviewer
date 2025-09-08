@@ -896,28 +896,29 @@ function updateImageDetails() {
 		const originalWidth = this.naturalWidth;
 		const originalHeight = this.naturalHeight;
 		
-		let targetWidth, targetHeight;
+		// Determine the output dimensions for each slice
+		let sliceHeight, sliceWidth;
 		if (isHighRes) {
-			// Use the maximum possible width while maintaining Instagram aspect ratio
-			targetHeight = Math.min(originalHeight, 1350); // Instagram max height
-			targetWidth = Math.round(targetHeight * aspectRatio);
-			
-			// If the calculated width exceeds original width, scale down
-			if (targetWidth > originalWidth) {
-				targetWidth = originalWidth;
-				targetHeight = Math.round(targetWidth / aspectRatio);
-			}
+			// Use the original height but cap it at Instagram's max height
+			sliceHeight = Math.min(originalHeight, 1350);
+			sliceWidth = Math.round(sliceHeight * (4/5)); // Instagram 4:5 aspect ratio
 		} else {
-			targetWidth = standardWidth;
-			targetHeight = standardHeight;
+			sliceWidth = standardWidth; // 1080
+			sliceHeight = standardHeight; // 1350
 		}
 
-		const numSlices = Math.max(minSlices, Math.ceil(originalWidth / targetWidth));
+		// Calculate how much of the original width each slice will cover
+		// When we scale the image to sliceHeight, the proportional width per slice is:
+		const scaleFactor = sliceHeight / originalHeight;
+		const originalWidthPerSlice = sliceWidth / scaleFactor;
+		
+		// Calculate number of slices needed to cover the entire original width
+		const numSlices = Math.max(minSlices, Math.ceil(originalWidth / originalWidthPerSlice));
 		
 		document.getElementById('original-size').textContent = `${originalWidth} × ${originalHeight}`;
-		document.getElementById('scaled-size').textContent = `${targetWidth} × ${targetHeight}`;
+		document.getElementById('scaled-size').textContent = `${sliceWidth} × ${sliceHeight}`;
 		document.getElementById('slice-count').textContent = numSlices;
-		document.getElementById('slice-resolution').textContent = `${targetWidth} × ${targetHeight}`;
+		document.getElementById('slice-resolution').textContent = `${sliceWidth} × ${sliceHeight}`;
 	};
 	img.src = URL.createObjectURL(currentImageFile);
 }
@@ -939,38 +940,41 @@ function processImage() {
 		img.onload = function() {
 			const isHighRes = document.getElementById('high-res-toggle').checked;
 			
-			let targetWidth, targetHeight;
+			// Determine the output dimensions for each slice
+			let sliceHeight, sliceWidth;
 			if (isHighRes) {
-				targetHeight = Math.min(this.naturalHeight, 1350);
-				targetWidth = Math.round(targetHeight * aspectRatio);
-				
-				if (targetWidth > this.naturalWidth) {
-					targetWidth = this.naturalWidth;
-					targetHeight = Math.round(targetWidth / aspectRatio);
-				}
+				// Use the original height but cap it at Instagram's max height
+				sliceHeight = Math.min(this.naturalHeight, 1350);
+				sliceWidth = Math.round(sliceHeight * (4/5)); // Instagram 4:5 aspect ratio
 			} else {
-				targetWidth = standardWidth;
-				targetHeight = standardHeight;
+				sliceWidth = standardWidth; // 1080
+				sliceHeight = standardHeight; // 1350
 			}
 
-			const numSlices = Math.max(minSlices, Math.ceil(this.naturalWidth / targetWidth));
-			const sliceWidth = this.naturalWidth / numSlices;
+			// Calculate how much of the original width each slice will cover
+			// When we scale the image to sliceHeight, the proportional width per slice is:
+			const scaleFactor = sliceHeight / this.naturalHeight;
+			const originalWidthPerSlice = sliceWidth / scaleFactor;
+			
+			// Calculate number of slices needed to cover the entire original width
+			const numSlices = Math.max(minSlices, Math.ceil(this.naturalWidth / originalWidthPerSlice));
+			const actualSliceWidth = this.naturalWidth / numSlices;
 			
 			slicedImages = [];
 			
 			// Create slices
 			for (let i = 0; i < numSlices; i++) {
-				canvas.width = targetWidth;
-				canvas.height = targetHeight;
+				canvas.width = sliceWidth;
+				canvas.height = sliceHeight;
 				
-				const sourceX = i * sliceWidth;
-				const sourceWidth = sliceWidth;
+				const sourceX = i * actualSliceWidth;
+				const sourceWidth = actualSliceWidth;
 				
 				// Draw the slice
 				ctx.drawImage(
 					this,
 					sourceX, 0, sourceWidth, this.naturalHeight,
-					0, 0, targetWidth, targetHeight
+					0, 0, sliceWidth, sliceHeight
 				);
 				
 				// Convert to blob and store
