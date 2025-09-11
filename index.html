@@ -11,6 +11,26 @@
 		<meta name="description" content="Extract and view EXIF metadata from JPG images, split panoramas for Instagram, and create custom overlays." />
 		
 		<style>
+			/* Global font settings - Sans-serif for all elements */
+			* {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+			}
+			
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+				margin: 0;
+				padding: 0;
+				line-height: 1.6;
+			}
+			
+			h1, h2, h3, h4, h5, h6 {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+			}
+			
+			button, input, select, textarea {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+			}
+			
 			.tab-content {
 				display: none;
 			}
@@ -111,10 +131,52 @@
 		</style>
 	</head>
 	<body>
+		<!-- Header Section -->
+		<header style="
+			background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+			color: white;
+			text-align: center;
+			padding: 40px 20px;
+			margin-bottom: 30px;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+		">
+			<div style="max-width: 800px; margin: 0 auto;">
+				<h1 style="
+					font-size: 2.5rem;
+					font-weight: 700;
+					margin: 0 0 15px 0;
+					text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+				">
+					📷 JPG Metadata Viewer
+				</h1>
+				<p style="
+					font-size: 1.2rem;
+					margin: 0 0 20px 0;
+					opacity: 0.9;
+					font-weight: 300;
+				">
+					Extract EXIF data • Split panoramas for Instagram • Create custom overlays • Compress images
+				</p>
+				<div style="
+					display: flex;
+					justify-content: center;
+					gap: 30px;
+					flex-wrap: wrap;
+					font-size: 0.9rem;
+					opacity: 0.8;
+				">
+					<span>🗺️ GPS Mapping</span>
+					<span>🌅 Daylight Analysis</span>
+					<span>📐 Panorama Splitting</span>
+					<span>🗜️ Smart Compression</span>
+				</div>
+			</div>
+		</header>
+
 		<!-- Navigation Tabs -->
 		<div id="main-tabs" style="
 			width: 80%;
-			margin: 30px auto 20px auto;
+			margin: 0 auto 20px auto;
 			border-bottom: 2px solid #e0e0e0;
 		">
 			<div style="display: flex; gap: 0;">
@@ -128,7 +190,7 @@
 					font-weight: 500;
 					transition: background 0.3s ease;
 				">
-					📋 Image Metadata
+					📋 Metadata and Tools
 				</button>
 				<button class="tab-button" data-tab="daylight" style="
 					background: #f5f5f5;
@@ -754,5 +816,178 @@
 		<script src="./js/FileSaver.min.js"></script>
 		<script src="./js/app.js"></script>
 		<!-- All JavaScript functionality moved to app.js -->
+
+		<!-- Update utilities -->
+		<div id="update-tools" style="position: fixed; bottom: 10px; right: 10px; z-index: 9999;">
+			<!-- Production update button (always visible) -->
+			<button id="force-update-btn" style="
+				background: #2196F3;
+				color: white;
+				border: none;
+				padding: 8px 12px;
+				border-radius: 4px;
+				font-size: 12px;
+				cursor: pointer;
+				box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+				margin-bottom: 8px;
+				display: block;
+			" title="Force app update">
+				🔄 Check for Updates
+			</button>
+			
+			<!-- Development tools (localhost only) -->
+			<div id="dev-tools" style="display: none;">
+				<div style="
+					background: rgba(0,0,0,0.8);
+					color: white;
+					padding: 10px;
+					border-radius: 8px;
+					box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+					font-family: monospace;
+					font-size: 11px;
+					margin-bottom: 8px;
+				">
+					App v4.0.0 | Cache: <span id="cache-status">Unknown</span><br>
+					PWA: <span id="pwa-status">Unknown</span> | Install: <span id="install-status">Unknown</span>
+				</div>
+				<button id="clear-cache-btn" style="
+					background: #ff4444;
+					color: white;
+					border: none;
+					padding: 8px 12px;
+					border-radius: 4px;
+					font-size: 12px;
+					cursor: pointer;
+					box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+				" title="Clear cache and reload (for development)">
+					🗑️ Clear Cache & Update
+				</button>
+			</div>
+		</div>
+
+		<script>
+			// Force update button (visible to all users)
+			document.getElementById('force-update-btn').addEventListener('click', async () => {
+				console.log('Force updating app...');
+				
+				if ('serviceWorker' in navigator) {
+					try {
+						const registration = await navigator.serviceWorker.ready;
+						await registration.update();
+						
+						// Show notification
+						const notification = document.createElement('div');
+						notification.style.cssText = `
+							position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+							background: #4CAF50; color: white; padding: 10px 20px;
+							border-radius: 6px; z-index: 10001; font-size: 14px;
+						`;
+						notification.textContent = 'Checking for updates...';
+						document.body.appendChild(notification);
+						
+						setTimeout(() => {
+							notification.textContent = 'App updated! Reloading...';
+							setTimeout(() => {
+								location.reload(true);
+							}, 1000);
+						}, 1000);
+						
+						setTimeout(() => {
+							if (notification.parentNode) notification.remove();
+						}, 3000);
+						
+					} catch (error) {
+						console.error('Update failed:', error);
+					}
+				}
+			});
+
+			// Show dev tools only in development (when serving from localhost)
+			if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '') {
+				document.getElementById('dev-tools').style.display = 'block';
+				
+				// Update cache status
+				const updateCacheStatus = async () => {
+					try {
+						const cacheNames = await caches.keys();
+						const status = cacheNames.length > 0 ? `${cacheNames.length} caches` : 'No cache';
+						document.getElementById('cache-status').textContent = status;
+					} catch (e) {
+						document.getElementById('cache-status').textContent = 'Error';
+					}
+				};
+				
+				// Update PWA status
+				const updatePWAStatus = () => {
+					const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+										 window.navigator.standalone || 
+										 document.referrer.includes('android-app://');
+					
+					document.getElementById('pwa-status').textContent = isStandalone ? 'Installed' : 'Web';
+					
+					// Check install button status
+					setTimeout(() => {
+						const hasInstallBtn = document.querySelector('button[style*="Install App"]') !== null;
+						const hasDeferred = window.deferredPrompt !== null;
+						document.getElementById('install-status').textContent = 
+							hasInstallBtn ? 'Button shown' : 
+							hasDeferred ? 'Prompt ready' : 
+							isStandalone ? 'Already installed' : 'Not available';
+					}, 1000);
+				};
+				
+				updateCacheStatus();
+				updatePWAStatus();
+				
+				// Update status every 5 seconds
+				setInterval(() => {
+					updateCacheStatus();
+					updatePWAStatus();
+				}, 5000);
+				
+				document.getElementById('clear-cache-btn').addEventListener('click', async () => {
+					console.log('Clearing all caches and forcing update...');
+					
+					try {
+						// Unregister all service workers
+						if ('serviceWorker' in navigator) {
+							const registrations = await navigator.serviceWorker.getRegistrations();
+							for (const registration of registrations) {
+								console.log('Unregistering service worker...');
+								await registration.unregister();
+							}
+						}
+						
+						// Clear all caches
+						if ('caches' in window) {
+							const cacheNames = await caches.keys();
+							await Promise.all(
+								cacheNames.map(cacheName => {
+									console.log('Deleting cache:', cacheName);
+									return caches.delete(cacheName);
+								})
+							);
+						}
+						
+						// Clear other storage
+						if ('localStorage' in window) {
+							localStorage.clear();
+						}
+						if ('sessionStorage' in window) {
+							sessionStorage.clear();
+						}
+						
+						console.log('All caches cleared! Reloading...');
+						
+						// Force hard reload
+						window.location.href = window.location.href + '?nocache=' + Date.now();
+						
+					} catch (error) {
+						console.error('Error clearing caches:', error);
+						location.reload(true);
+					}
+				});
+			}
+		</script>
 	</body>
 </html>

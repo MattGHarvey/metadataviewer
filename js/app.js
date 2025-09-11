@@ -21,16 +21,48 @@ if ("serviceWorker" in navigator) {
 			.then((registration) => {
 				console.log("Service Worker registered successfully:", registration.scope);
 				
-				// Check for updates
+				// Force immediate update check
+				registration.update();
+				
+				// Check for updates more aggressively
 				registration.addEventListener('updatefound', () => {
 					const newWorker = registration.installing;
 					newWorker.addEventListener('statechange', () => {
-						if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-							// New version available
-							console.log('New version available! Refresh to update.');
+						if (newWorker.state === 'installed') {
+							if (navigator.serviceWorker.controller) {
+								// New version available - show notification and force update
+								console.log('New version available! Activating immediately...');
+								
+								// Show update notification
+								showUpdateNotification();
+								
+								// Force update after short delay
+								setTimeout(() => {
+									newWorker.postMessage({ type: 'SKIP_WAITING' });
+									window.location.reload();
+								}, 2000);
+							} else {
+								// First time installation
+								console.log('App ready for offline use!');
+							}
 						}
 					});
 				});
+				
+				// Check for updates every 10 seconds during development
+				// and every 60 seconds in production to force existing installations to update
+				const updateInterval = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '') ? 10000 : 60000;
+				
+				setInterval(() => {
+					console.log('Checking for service worker updates...');
+					registration.update();
+				}, updateInterval);
+				
+				// Also check immediately after 5 seconds
+				setTimeout(() => {
+					console.log('Initial update check...');
+					registration.update();
+				}, 5000);
 			})
 			.catch((error) => {
 				console.log("SW registration failed:", error);
@@ -41,8 +73,63 @@ if ("serviceWorker" in navigator) {
 	navigator.serviceWorker.addEventListener('message', (event) => {
 		if (event.data && event.data.type === 'CACHE_UPDATED') {
 			console.log('App updated and ready for offline use!');
+		} else if (event.data && event.data.type === 'SW_UPDATED') {
+			console.log(`Service Worker updated to version ${event.data.version}!`);
+			showUpdateNotification();
+			// Auto-reload after a short delay
+			setTimeout(() => {
+				window.location.reload();
+			}, 3000);
 		}
 	});
+}
+
+// Update Notification System
+// ==========================
+function showUpdateNotification() {
+	// Create update notification
+	const notification = document.createElement('div');
+	notification.id = 'update-notification';
+	notification.style.cssText = `
+		position: fixed;
+		top: 20px;
+		left: 50%;
+		transform: translateX(-50%);
+		background: #4CAF50;
+		color: white;
+		padding: 15px 25px;
+		border-radius: 8px;
+		box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+		z-index: 10000;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		font-size: 14px;
+		animation: slideDown 0.3s ease-out;
+	`;
+	notification.innerHTML = `
+		🎉 App updated to v4.0.0! Reloading in 2 seconds...
+	`;
+	
+	// Add animation styles if not already present
+	if (!document.querySelector('#update-notification-styles')) {
+		const styles = document.createElement('style');
+		styles.id = 'update-notification-styles';
+		styles.textContent = `
+			@keyframes slideDown {
+				from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+				to { transform: translateX(-50%) translateY(0); opacity: 1; }
+			}
+		`;
+		document.head.appendChild(styles);
+	}
+	
+	document.body.appendChild(notification);
+	
+	// Remove notification after 3 seconds
+	setTimeout(() => {
+		if (notification.parentNode) {
+			notification.remove();
+		}
+	}, 3000);
 }
 
 // PWA Install Functionality
@@ -50,10 +137,36 @@ if ("serviceWorker" in navigator) {
 let deferredPrompt;
 let installButton;
 
+// Make deferredPrompt accessible globally for debugging
+window.deferredPrompt = null;
+
 window.addEventListener("beforeinstallprompt", (e) => {
+	console.log("PWA: beforeinstallprompt event fired");
 	e.preventDefault();
 	deferredPrompt = e;
+	window.deferredPrompt = e; // For debugging
 	showInstallButton();
+});
+
+// Check if app is already installed or if we should show manual install option
+window.addEventListener('load', () => {
+	// Check if running as PWA
+	const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+						 window.navigator.standalone || 
+						 document.referrer.includes('android-app://');
+	
+	if (isStandalone) {
+		console.log("PWA: App is running in standalone mode (already installed)");
+		return;
+	}
+	
+	// If no beforeinstallprompt after 3 seconds, show manual install option
+	setTimeout(() => {
+		if (!deferredPrompt && !installButton) {
+			console.log("PWA: No install prompt available, showing manual install info");
+			showManualInstallButton();
+		}
+	}, 3000);
 });
 
 function showInstallButton() {
@@ -71,7 +184,7 @@ function showInstallButton() {
 		cursor: pointer;
 		font-size: 14px;
 		font-weight: 500;
-		z-index: 1000;
+		z-index: 10002;
 		box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
 		transition: all 0.2s ease;
 	`;
@@ -106,6 +219,128 @@ function hideInstallButton() {
 		installButton.parentNode.removeChild(installButton);
 		installButton = null;
 	}
+}
+
+function showManualInstallButton() {
+	// Don't show if already installed or if automatic button is present
+	if (installButton) return;
+	
+	installButton = document.createElement("button");
+	installButton.textContent = "📱 Install App";
+	installButton.style.cssText = `
+		position: fixed;
+		top: 20px;
+		right: 20px;
+		background: #1976d2;
+		color: white;
+		border: none;
+		padding: 12px 16px;
+		border-radius: 8px;
+		cursor: pointer;
+		font-size: 14px;
+		font-weight: 500;
+		z-index: 10002;
+		box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+		transition: all 0.2s ease;
+	`;
+
+	installButton.addEventListener("mouseover", () => {
+		installButton.style.transform = "translateY(-1px)";
+		installButton.style.boxShadow = "0 6px 16px rgba(25, 118, 210, 0.4)";
+	});
+
+	installButton.addEventListener("mouseout", () => {
+		installButton.style.transform = "translateY(0)";
+		installButton.style.boxShadow = "0 4px 12px rgba(25, 118, 210, 0.3)";
+	});
+
+	installButton.addEventListener("click", () => {
+		// Show manual install instructions
+		showInstallInstructions();
+	});
+
+	document.body.appendChild(installButton);
+}
+
+function showInstallInstructions() {
+	const modal = document.createElement("div");
+	modal.style.cssText = `
+		position: fixed;
+		top: 0; left: 0; width: 100%; height: 100%;
+		background: rgba(0,0,0,0.7);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 10003;
+	`;
+	
+	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+	const isAndroid = /Android/.test(navigator.userAgent);
+	const isChrome = /Chrome/.test(navigator.userAgent);
+	const isSafari = /Safari/.test(navigator.userAgent) && !isChrome;
+	
+	let instructions = "";
+	if (isIOS && isSafari) {
+		instructions = `
+			<h3>📱 Install on iPhone/iPad</h3>
+			<ol>
+				<li>Tap the <strong>Share</strong> button <span style="font-size: 18px;">⎋</span></li>
+				<li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+				<li>Tap <strong>"Add"</strong> to confirm</li>
+			</ol>
+		`;
+	} else if (isAndroid && isChrome) {
+		instructions = `
+			<h3>📱 Install on Android</h3>
+			<ol>
+				<li>Tap the <strong>menu</strong> (⋮) in Chrome</li>
+				<li>Select <strong>"Add to Home screen"</strong></li>
+				<li>Tap <strong>"Install"</strong> or <strong>"Add"</strong></li>
+			</ol>
+		`;
+	} else {
+		instructions = `
+			<h3>📱 Install This App</h3>
+			<p>To install this app:</p>
+			<ol>
+				<li><strong>Chrome/Edge:</strong> Look for an install icon in the address bar</li>
+				<li><strong>Safari:</strong> Use Share → Add to Home Screen</li>
+				<li><strong>Firefox:</strong> Look for the install prompt or use bookmark/shortcut</li>
+			</ol>
+		`;
+	}
+	
+	modal.innerHTML = `
+		<div style="
+			background: white;
+			padding: 30px;
+			border-radius: 12px;
+			max-width: 400px;
+			text-align: center;
+			box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+		">
+			${instructions}
+			<button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="
+				background: #1976d2;
+				color: white;
+				border: none;
+				padding: 10px 20px;
+				border-radius: 6px;
+				cursor: pointer;
+				margin-top: 20px;
+				font-size: 14px;
+			">Got it!</button>
+		</div>
+	`;
+	
+	document.body.appendChild(modal);
+	
+	// Remove modal when clicking outside
+	modal.addEventListener("click", (e) => {
+		if (e.target === modal) {
+			modal.remove();
+		}
+	});
 }
 
 // Hide button if app is already installed
@@ -1306,7 +1541,7 @@ function initializeExifOverlayInterface() {
 						<option value="Montserrat, sans-serif">Montserrat (Geometric Sans)</option>
 						<option value="Nunito, sans-serif">Nunito (Rounded Sans)</option>
 						<option value="Poppins, sans-serif">Poppins (Stylish Sans)</option>
-						<option value="'Playfair Display', serif">'Playfair Display' (Elegant Serif)</option>
+						<option value="'Source Sans Pro', sans-serif">Source Sans Pro (Elegant Sans)</option>
 						<option value="Arial, sans-serif">Arial (System Default)</option>
 					</select>
 				</div>
