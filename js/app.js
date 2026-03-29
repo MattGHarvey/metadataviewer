@@ -1076,6 +1076,26 @@ function initializeSplitterInterface() {
 					</label>
 					<p style="margin: 4px 0 0 24px; color: #666; font-size: 14px;">Uses maximum possible resolution from your image</p>
 				</div>
+				<div style="margin-bottom: 16px; background: #f0f4ff; padding: 14px; border-radius: 8px; border: 1px solid #d0d8f0;">
+					<h4 style="margin: 0 0 12px 0; color: #333; font-size: 14px;">Full View Options</h4>
+					<div style="margin-bottom: 12px;">
+						<label style="display: flex; justify-content: space-between; font-size: 13px; color: #555; margin-bottom: 4px;">
+							<span>Margin</span>
+							<span id="fv-margin-label">8%</span>
+						</label>
+						<input type="range" id="fv-margin-slider" min="0" max="20" value="8" step="1" style="width: 100%;">
+					</div>
+					<div>
+						<label style="display: block; font-size: 13px; color: #555; margin-bottom: 6px;">Background</label>
+						<div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+							<button data-bg="white" class="fv-bg-btn" style="padding: 5px 12px; background: #fff; border: 2px solid #667eea; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">White</button>
+							<button data-bg="black" class="fv-bg-btn" style="padding: 5px 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">Black</button>
+							<button data-bg="blur" class="fv-bg-btn" style="padding: 5px 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">Blur</button>
+							<button data-bg="custom" class="fv-bg-btn" style="padding: 5px 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px;">Custom</button>
+							<input type="color" id="fv-custom-color" value="#cccccc" style="width: 32px; height: 28px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; display: none; padding: 2px;">
+						</div>
+					</div>
+				</div>
 				<div style="display: flex; gap: 12px;">
 					<button id="process-btn" style="
 						flex: 1;
@@ -1127,6 +1147,41 @@ function setupSplitterEventListeners() {
 	processBtn.addEventListener('click', processImage);
 	resetBtn.addEventListener('click', resetSplitter);
 	highResToggle.addEventListener('change', updateImageDetails);
+
+	// Initialize full view settings
+	window.fullViewSettings = { marginPct: 0.08, bgType: 'white', bgColor: '#cccccc' };
+
+	const marginSlider = document.getElementById('fv-margin-slider');
+	const marginLabel = document.getElementById('fv-margin-label');
+	const bgButtons = document.querySelectorAll('.fv-bg-btn');
+	const customColorInput = document.getElementById('fv-custom-color');
+
+	marginSlider.addEventListener('input', () => {
+		const val = parseInt(marginSlider.value);
+		marginLabel.textContent = val + '%';
+		window.fullViewSettings.marginPct = val / 100;
+		updateFullViewIfDisplayed();
+	});
+
+	bgButtons.forEach(btn => {
+		btn.addEventListener('click', () => {
+			bgButtons.forEach(b => {
+				b.style.border = '1px solid #ddd';
+				b.style.fontWeight = 'normal';
+			});
+			btn.style.border = '2px solid #667eea';
+			btn.style.fontWeight = '600';
+			const bgType = btn.dataset.bg;
+			window.fullViewSettings.bgType = bgType;
+			customColorInput.style.display = bgType === 'custom' ? 'inline-block' : 'none';
+			updateFullViewIfDisplayed();
+		});
+	});
+
+	customColorInput.addEventListener('input', () => {
+		window.fullViewSettings.bgColor = customColorInput.value;
+		updateFullViewIfDisplayed();
+	});
 }
 
 function updateImageDetails() {
@@ -1260,20 +1315,46 @@ function createFullViewImageForPreview() {
 			
 			fullCanvas.width = sliceWidth;
 			fullCanvas.height = sliceHeight;
-			
-			// Fill with white background
-			fullCtx.fillStyle = '#FFFFFF';
-			fullCtx.fillRect(0, 0, sliceWidth, sliceHeight);
-			
+
+			// Get full view settings
+			const fvSettings = window.fullViewSettings || { marginPct: 0.08, bgType: 'white', bgColor: '#cccccc' };
+
+			// Draw background
+			if (fvSettings.bgType === 'blur') {
+				const imgAspect = this.naturalWidth / this.naturalHeight;
+				const canvasAspect = sliceWidth / sliceHeight;
+				const blurPad = 80;
+				let bgW, bgH, bgX, bgY;
+				if (imgAspect > canvasAspect) {
+					bgH = sliceHeight + blurPad * 2;
+					bgW = bgH * imgAspect;
+				} else {
+					bgW = sliceWidth + blurPad * 2;
+					bgH = bgW / imgAspect;
+				}
+				bgX = (sliceWidth - bgW) / 2;
+				bgY = (sliceHeight - bgH) / 2;
+				fullCtx.filter = 'blur(30px)';
+				fullCtx.drawImage(this, 0, 0, this.naturalWidth, this.naturalHeight, bgX, bgY, bgW, bgH);
+				fullCtx.filter = 'none';
+				fullCtx.fillStyle = 'rgba(0,0,0,0.15)';
+				fullCtx.fillRect(0, 0, sliceWidth, sliceHeight);
+			} else {
+				const bgColor = fvSettings.bgType === 'black' ? '#000000' :
+				                fvSettings.bgType === 'custom' ? fvSettings.bgColor : '#FFFFFF';
+				fullCtx.fillStyle = bgColor;
+				fullCtx.fillRect(0, 0, sliceWidth, sliceHeight);
+			}
+
 			// Calculate the scale for the panorama to fit within the frame with margins
-			const margin = Math.round(sliceWidth * 0.08); // 8% margin
+			const margin = Math.round(sliceWidth * fvSettings.marginPct);
 			const availableWidth = sliceWidth - (margin * 2);
 			const availableHeight = sliceHeight - (margin * 2);
-			
+
 			// Determine which dimension constrains the scaling
 			const originalAspectRatio = this.naturalWidth / this.naturalHeight;
 			let scaledPanoWidth, scaledPanoHeight;
-			
+
 			if (originalAspectRatio > availableWidth / availableHeight) {
 				// Width is the constraining factor
 				scaledPanoWidth = availableWidth;
@@ -1283,23 +1364,18 @@ function createFullViewImageForPreview() {
 				scaledPanoHeight = availableHeight;
 				scaledPanoWidth = scaledPanoHeight * originalAspectRatio;
 			}
-			
+
 			// Calculate position to center the image
 			const x = Math.round((sliceWidth - scaledPanoWidth) / 2);
 			const y = Math.round((sliceHeight - scaledPanoHeight) / 2);
-			
-			// Draw the scaled panorama centered on the white canvas
+
+			// Draw the scaled panorama centered on the canvas
 			fullCtx.drawImage(
 				this,
 				0, 0, this.naturalWidth, this.naturalHeight,
 				x, y, scaledPanoWidth, scaledPanoHeight
 			);
-			
-			// Add a subtle border
-			fullCtx.strokeStyle = '#EEEEEE';
-			fullCtx.lineWidth = 1;
-			fullCtx.strokeRect(x - 1, y - 1, scaledPanoWidth + 2, scaledPanoHeight + 2);
-			
+
 			resolve({
 				dataUrl: fullCanvas.toDataURL('image/jpeg', 0.95),
 				width: sliceWidth,
@@ -1435,20 +1511,46 @@ function createFullViewImage() {
 			
 			fullCanvas.width = sliceWidth;
 			fullCanvas.height = sliceHeight;
-			
-			// Fill with white background
-			fullCtx.fillStyle = '#FFFFFF';
-			fullCtx.fillRect(0, 0, sliceWidth, sliceHeight);
-			
+
+			// Get full view settings
+			const fvSettings = window.fullViewSettings || { marginPct: 0.08, bgType: 'white', bgColor: '#cccccc' };
+
+			// Draw background
+			if (fvSettings.bgType === 'blur') {
+				const imgAspect = this.naturalWidth / this.naturalHeight;
+				const canvasAspect = sliceWidth / sliceHeight;
+				const blurPad = 80;
+				let bgW, bgH, bgX, bgY;
+				if (imgAspect > canvasAspect) {
+					bgH = sliceHeight + blurPad * 2;
+					bgW = bgH * imgAspect;
+				} else {
+					bgW = sliceWidth + blurPad * 2;
+					bgH = bgW / imgAspect;
+				}
+				bgX = (sliceWidth - bgW) / 2;
+				bgY = (sliceHeight - bgH) / 2;
+				fullCtx.filter = 'blur(30px)';
+				fullCtx.drawImage(this, 0, 0, this.naturalWidth, this.naturalHeight, bgX, bgY, bgW, bgH);
+				fullCtx.filter = 'none';
+				fullCtx.fillStyle = 'rgba(0,0,0,0.15)';
+				fullCtx.fillRect(0, 0, sliceWidth, sliceHeight);
+			} else {
+				const bgColor = fvSettings.bgType === 'black' ? '#000000' :
+				                fvSettings.bgType === 'custom' ? fvSettings.bgColor : '#FFFFFF';
+				fullCtx.fillStyle = bgColor;
+				fullCtx.fillRect(0, 0, sliceWidth, sliceHeight);
+			}
+
 			// Calculate the scale for the panorama to fit within the frame with margins
-			const margin = Math.round(sliceWidth * 0.08); // 8% margin
+			const margin = Math.round(sliceWidth * fvSettings.marginPct);
 			const availableWidth = sliceWidth - (margin * 2);
 			const availableHeight = sliceHeight - (margin * 2);
-			
+
 			// Determine which dimension constrains the scaling
 			const originalAspectRatio = this.naturalWidth / this.naturalHeight;
 			let scaledPanoWidth, scaledPanoHeight;
-			
+
 			if (originalAspectRatio > availableWidth / availableHeight) {
 				// Width is the constraining factor
 				scaledPanoWidth = availableWidth;
@@ -1458,23 +1560,18 @@ function createFullViewImage() {
 				scaledPanoHeight = availableHeight;
 				scaledPanoWidth = scaledPanoHeight * originalAspectRatio;
 			}
-			
+
 			// Calculate position to center the image
 			const x = Math.round((sliceWidth - scaledPanoWidth) / 2);
 			const y = Math.round((sliceHeight - scaledPanoHeight) / 2);
-			
-			// Draw the scaled panorama centered on the white canvas
+
+			// Draw the scaled panorama centered on the canvas
 			fullCtx.drawImage(
 				this,
 				0, 0, this.naturalWidth, this.naturalHeight,
 				x, y, scaledPanoWidth, scaledPanoHeight
 			);
-			
-			// Add a subtle border
-			fullCtx.strokeStyle = '#EEEEEE';
-			fullCtx.lineWidth = 1;
-			fullCtx.strokeRect(x - 1, y - 1, scaledPanoWidth + 2, scaledPanoHeight + 2);
-			
+
 			resolve(fullCanvas.toDataURL('image/jpeg', 0.95));
 		};
 		
@@ -1486,13 +1583,26 @@ function resetSplitter() {
 	originalImage = null;
 	slicedImages = [];
 	fullViewImage = null;
-	
+	window.fullViewSettings = { marginPct: 0.08, bgType: 'white', bgColor: '#cccccc' };
+
 	const outputArea = document.getElementById('output-area');
 	outputArea.innerHTML = 'Click "Generate Slices" to create Instagram-ready image slices';
-	
+
 	// Reset high-res toggle
 	document.getElementById('high-res-toggle').checked = true;
 	updateImageDetails();
+}
+
+function updateFullViewIfDisplayed() {
+	if (!window.fullViewImage || !window.slicedImages || window.slicedImages.length === 0) return;
+	createFullViewImageForPreview().then(fullViewData => {
+		if (!fullViewData) return;
+		window.fullViewImage = fullViewData;
+		const fullViewImg = document.querySelector('#output-area img[alt="Full View"]');
+		if (fullViewImg) {
+			fullViewImg.src = fullViewData.dataUrl;
+		}
+	});
 }
 
 // EXIF Overlay Functions
